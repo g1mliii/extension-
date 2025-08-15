@@ -3,17 +3,23 @@
 ## Root Directory Organization
 
 ```
-├── extension-/                    # Main extension project
-│   ├── rating-extension/          # Extension source code
-│   └── supabase/                  # Backend configuration
-├── rating-extension-supabase/     # Alternative supabase setup
-└── b/                            # Additional project variant
+├── .kiro/                        # Kiro AI steering files
+├── .vscode/                      # VS Code settings
+├── supabase/                     # Backend configuration
+├── icons/                        # Extension icons
+├── manifest.json                 # Extension manifest (entry point)
+├── popup.html                    # Main UI template
+├── popup.css                     # Styling (glassmorphism theme)
+├── popup.js                      # Main UI logic and event handling
+├── auth.js                       # Authentication module
+├── supabase.js                   # Supabase client library
+├── confirm.html                  # Confirmation dialogs
+└── .gitignore                    # Git ignore rules
 ```
 
-## Extension Source (`extension-/rating-extension/`)
+## Extension Files (Root Level)
 
 ```
-rating-extension/
 ├── manifest.json                 # Extension manifest (entry point)
 ├── popup.html                    # Main UI template
 ├── popup.css                     # Styling (glassmorphism theme)
@@ -24,7 +30,7 @@ rating-extension/
 └── icons/                        # Extension icons (16, 48, 128px)
 ```
 
-## Backend Structure (`extension-/supabase/`)
+## Backend Structure (`supabase/`)
 
 ```
 supabase/
@@ -53,10 +59,11 @@ supabase/
 
 ## Development Workflow
 
-1. **Extension Development**: Work in `extension-/rating-extension/`
-2. **Backend Changes**: Modify functions in `extension-/supabase/functions/`
-3. **Database Schema**: Add migrations to `extension-/supabase/migrations/`
+1. **Extension Development**: Work directly in root directory files
+2. **Backend Changes**: Modify functions in `supabase/functions/`
+3. **Database Schema**: Add migrations to `supabase/migrations/`
 4. **Testing**: Load unpacked extension in Chrome for testing
+5. **Git Workflow**: Use `workspace-clean-v2` branch for clean development
 
 ## Important Files
 
