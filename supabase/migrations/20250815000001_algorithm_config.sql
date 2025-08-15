@@ -192,7 +192,7 @@ BEGIN
         ROUND(AVG(domain_age_days), 1) as avg_domain_age_days,
         COUNT(*) FILTER (WHERE ssl_valid = true) as ssl_valid_count,
         COUNT(*) FILTER (WHERE google_safe_browsing_status IN ('malware', 'phishing', 'unwanted')) as google_threats_count,
-        COUNT(*) FILTER (WHERE phishtank_status IN ('phishing', 'suspicious')) as phishtank_threats_count
+        COUNT(*) FILTER (WHERE hybrid_analysis_status IN ('malicious', 'suspicious')) as hybrid_threats_count
     FROM domain_cache;
 END;
 $$;

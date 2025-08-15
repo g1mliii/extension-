@@ -1,24 +1,24 @@
 {
-  "env": {
-    "es2022": true,
-    "deno": true
-  },
-  "extends": [
-    "eslint:recommended"
-  ],
-  "parserOptions": {
-    "ecmaVersion": 2022,
-    "sourceType": "module"
-  },
-  "rules": {
-    "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-unused-vars": "off",
-    "no-unused-vars": "off",
-    "prefer-const": "off",
-    "no-undef": "off"
-  },
-  "ignorePatterns": [
-    "*.ts",
-    "*.js"
-  ]
+    "env": {
+        "es2022": true,
+        "deno": true
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+    },
+    "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "no-unused-vars": "off",
+        "prefer-const": "off",
+        "no-undef": "off"
+    },
+    "ignorePatterns": [
+        "*.ts",
+        "*.js"
+    ]
 }

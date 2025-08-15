@@ -12,7 +12,7 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // External API configurations (set these in your Supabase environment)
 const GOOGLE_SAFE_BROWSING_API_KEY = Deno.env.get('GOOGLE_SAFE_BROWSING_API_KEY')
-const PHISHTANK_API_KEY = Deno.env.get('PHISHTANK_API_KEY')
+const HYBRID_ANALYSIS_API_KEY = Deno.env.get('HYBRID_ANALYSIS_API_KEY')
 
 interface DomainAnalysisResult {
   domain: string
@@ -21,7 +21,8 @@ interface DomainAnalysisResult {
   httpStatus?: number
   sslValid?: boolean
   googleSafeBrowsingStatus?: string
-  phishtankStatus?: string
+  hybridAnalysisStatus?: string
+  threatScore?: number // Combined threat score from both sources
   error?: string
 }
 
@@ -85,7 +86,8 @@ serve(async (req) => {
       http_status: analysis.httpStatus,
       ssl_valid: analysis.sslValid,
       google_safe_browsing_status: analysis.googleSafeBrowsingStatus,
-      phishtank_status: analysis.phishtankStatus,
+      hybrid_analysis_status: analysis.hybridAnalysisStatus,
+      threat_score: analysis.threatScore,
       last_checked: new Date().toISOString(),
       cache_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
     }
@@ -126,15 +128,18 @@ async function analyzeDomain(domain: string): Promise<DomainAnalysisResult> {
     // 2. Domain Age (simplified - in production use proper WHOIS API)
     await checkDomainAge(domain, result)
 
-    // 3. Google Safe Browsing
+    // 3. Google Safe Browsing (Primary)
     if (GOOGLE_SAFE_BROWSING_API_KEY) {
       await checkGoogleSafeBrowsing(domain, result)
     }
 
-    // 4. PhishTank
-    if (PHISHTANK_API_KEY) {
-      await checkPhishTank(domain, result)
+    // 4. Hybrid Analysis (Secondary)
+    if (HYBRID_ANALYSIS_API_KEY) {
+      await checkHybridAnalysis(domain, result)
     }
+
+    // 5. Calculate combined threat score
+    calculateThreatScore(result)
 
   } catch (error) {
     result.error = error.message
@@ -250,34 +255,82 @@ async function checkGoogleSafeBrowsing(domain: string, result: DomainAnalysisRes
   }
 }
 
-async function checkPhishTank(domain: string, result: DomainAnalysisResult) {
-  if (!PHISHTANK_API_KEY) return
+async function checkHybridAnalysis(domain: string, result: DomainAnalysisResult) {
+  if (!HYBRID_ANALYSIS_API_KEY) return
 
   try {
-    // PhishTank API check
-    const response = await fetch('https://checkurl.phishtank.com/checkurl/', {
+    // Hybrid Analysis API - Search for domain reports
+    const response = await fetch(`https://www.hybrid-analysis.com/api/v2/search/terms`, {
       method: 'POST',
       headers: {
+        'api-key': HYBRID_ANALYSIS_API_KEY,
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'URL Rating Extension 1.0'
       },
       body: new URLSearchParams({
-        url: `https://${domain}`,
-        format: 'json',
-        app_key: PHISHTANK_API_KEY
+        'domain': domain,
+        'country': 'all',
+        'verdict': 'all'
       })
     })
 
     const data = await response.json()
     
-    if (data.results && data.results.in_database) {
-      result.phishtankStatus = data.results.valid ? 'phishing' : 'suspicious'
+    if (data.result && data.result.length > 0) {
+      // Check verdicts from recent analyses
+      const maliciousReports = data.result.filter((report: any) => 
+        report.verdict === 'malicious' || 
+        report.threat_score >= 70 ||
+        report.av_detect >= 5
+      )
+      
+      const suspiciousReports = data.result.filter((report: any) => 
+        report.verdict === 'suspicious' || 
+        (report.threat_score >= 30 && report.threat_score < 70)
+      )
+      
+      if (maliciousReports.length > 0) {
+        result.hybridAnalysisStatus = 'malicious'
+      } else if (suspiciousReports.length > 0) {
+        result.hybridAnalysisStatus = 'suspicious'
+      } else {
+        result.hybridAnalysisStatus = 'clean'
+      }
     } else {
-      result.phishtankStatus = 'clean'
+      result.hybridAnalysisStatus = 'unknown'
     }
 
   } catch (error) {
-    console.error('PhishTank check failed:', error)
-    result.phishtankStatus = 'unknown'
+    console.error('Hybrid Analysis check failed:', error)
+    result.hybridAnalysisStatus = 'unknown'
   }
+}
+
+function calculateThreatScore(result: DomainAnalysisResult) {
+  let threatScore = 0
+  let totalChecks = 0
+
+  // Google Safe Browsing (Primary - weight: 60)
+  if (result.googleSafeBrowsingStatus) {
+    totalChecks++
+    switch (result.googleSafeBrowsingStatus) {
+      case 'malware': threatScore += 60; break
+      case 'phishing': threatScore += 55; break
+      case 'unwanted': threatScore += 40; break
+      case 'safe': threatScore += 0; break
+    }
+  }
+
+  // Hybrid Analysis (Secondary - weight: 40)
+  if (result.hybridAnalysisStatus) {
+    totalChecks++
+    switch (result.hybridAnalysisStatus) {
+      case 'malicious': threatScore += 40; break
+      case 'suspicious': threatScore += 25; break
+      case 'clean': threatScore += 0; break
+    }
+  }
+
+  // Calculate weighted threat score (0-100)
+  result.threatScore = totalChecks > 0 ? Math.round(threatScore / totalChecks) : 0
 }

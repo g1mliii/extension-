@@ -10,7 +10,8 @@ CREATE TABLE domain_cache (
   http_status INTEGER,
   ssl_valid BOOLEAN,
   google_safe_browsing_status TEXT, -- 'safe', 'malware', 'phishing', 'unwanted'
-  phishtank_status TEXT, -- 'clean', 'phishing', 'suspicious'
+  hybrid_analysis_status TEXT, -- 'clean', 'suspicious', 'malicious', 'unknown'
+  threat_score INTEGER, -- Combined threat score 0-100
   last_checked TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   cache_expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '7 days'),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -267,10 +268,10 @@ BEGIN
                 ELSE NULL; -- 'safe' or null, no penalty
             END CASE;
             
-            -- PhishTank penalties
-            CASE v_domain_cache_record.phishtank_status
-                WHEN 'phishing' THEN v_domain_trust := v_domain_trust - 40;
-                WHEN 'suspicious' THEN v_domain_trust := v_domain_trust - 20;
+            -- Hybrid Analysis penalties
+            CASE v_domain_cache_record.hybrid_analysis_status
+                WHEN 'malicious' THEN v_domain_trust := v_domain_trust - 40;
+                WHEN 'suspicious' THEN v_domain_trust := v_domain_trust - 25;
                 ELSE NULL; -- 'clean' or null, no penalty
             END CASE;
         END IF;
