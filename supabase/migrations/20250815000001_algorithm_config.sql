@@ -164,9 +164,43 @@ BEGIN
 END;
 $$;
 
+-- Create function to get cache statistics
+CREATE OR REPLACE FUNCTION get_cache_statistics()
+RETURNS TABLE(
+    total_domains BIGINT,
+    cached_domains BIGINT,
+    expired_domains BIGINT,
+    cache_hit_rate DECIMAL,
+    avg_domain_age_days DECIMAL,
+    ssl_valid_count BIGINT,
+    google_threats_count BIGINT,
+    phishtank_threats_count BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*) as total_domains,
+        COUNT(*) FILTER (WHERE cache_expires_at > NOW()) as cached_domains,
+        COUNT(*) FILTER (WHERE cache_expires_at <= NOW()) as expired_domains,
+        ROUND(
+            COUNT(*) FILTER (WHERE cache_expires_at > NOW()) * 100.0 / 
+            NULLIF(COUNT(*), 0), 2
+        ) as cache_hit_rate,
+        ROUND(AVG(domain_age_days), 1) as avg_domain_age_days,
+        COUNT(*) FILTER (WHERE ssl_valid = true) as ssl_valid_count,
+        COUNT(*) FILTER (WHERE google_safe_browsing_status IN ('malware', 'phishing', 'unwanted')) as google_threats_count,
+        COUNT(*) FILTER (WHERE phishtank_status IN ('phishing', 'suspicious')) as phishtank_threats_count
+    FROM domain_cache;
+END;
+$$;
+
 -- Comments
 COMMENT ON TABLE trust_algorithm_config IS 'Configurable parameters for the trust scoring algorithm';
 COMMENT ON FUNCTION get_trust_config IS 'Retrieves configuration values for the trust algorithm';
 COMMENT ON FUNCTION update_trust_config IS 'Updates configuration values and triggers recalculation if needed';
 COMMENT ON VIEW trust_algorithm_performance IS 'Monitors algorithm performance over time';
 COMMENT ON FUNCTION recalculate_with_new_config IS 'Recalculates all trust scores after configuration changes';
+COMMENT ON FUNCTION get_cache_statistics IS 'Returns statistics about domain cache performance and threat detection';

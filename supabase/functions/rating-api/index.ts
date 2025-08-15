@@ -1,6 +1,5 @@
-// @ts-ignore
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-// @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -140,7 +139,20 @@ async function handleGetUrlStats(req: Request, supabase: any) {
 
     const { data, error } = await supabase
         .from('url_stats')
-        .select('trust_score, rating_count, spam_reports_count, misleading_reports_count, scam_reports_count')
+        .select(`
+            trust_score, 
+            final_trust_score,
+            domain_trust_score,
+            community_trust_score,
+            content_type,
+            rating_count, 
+            average_rating,
+            spam_reports_count, 
+            misleading_reports_count, 
+            scam_reports_count,
+            domain,
+            last_updated
+        `)
         .eq('url_hash', urlHash)
         .single()
 
@@ -150,11 +162,18 @@ async function handleGetUrlStats(req: Request, supabase: any) {
             JSON.stringify({
                 url: targetUrl,
                 url_hash: urlHash,
+                domain: extractDomain(targetUrl),
                 trust_score: null,
+                final_trust_score: null,
+                domain_trust_score: null,
+                community_trust_score: null,
+                content_type: 'general',
                 rating_count: 0,
+                average_rating: null,
                 spam_reports_count: 0,
                 misleading_reports_count: 0,
                 scam_reports_count: 0,
+                last_updated: null,
                 message: 'No stats found for this URL yet.'
             }),
             {
@@ -177,11 +196,18 @@ async function handleGetUrlStats(req: Request, supabase: any) {
         JSON.stringify({
             url: targetUrl,
             url_hash: urlHash,
-            trust_score: data.trust_score,
+            domain: data.domain || extractDomain(targetUrl),
+            trust_score: data.trust_score, // Legacy compatibility
+            final_trust_score: data.final_trust_score,
+            domain_trust_score: data.domain_trust_score,
+            community_trust_score: data.community_trust_score,
+            content_type: data.content_type,
             rating_count: data.rating_count,
+            average_rating: data.average_rating,
             spam_reports_count: data.spam_reports_count,
             misleading_reports_count: data.misleading_reports_count,
-            scam_reports_count: data.scam_reports_count
+            scam_reports_count: data.scam_reports_count,
+            last_updated: data.last_updated
         }),
         {
             status: 200,
@@ -326,7 +352,20 @@ async function handleSubmitRating(req: Request, supabase: any, userId: string) {
     // Fetch current URL stats after submission
     const { data: currentUrlStats } = await supabase
         .from('url_stats')
-        .select('trust_score, rating_count, spam_reports_count, misleading_reports_count, scam_reports_count')
+        .select(`
+            trust_score, 
+            final_trust_score,
+            domain_trust_score,
+            community_trust_score,
+            content_type,
+            rating_count, 
+            average_rating,
+            spam_reports_count, 
+            misleading_reports_count, 
+            scam_reports_count,
+            domain,
+            last_updated
+        `)
         .eq('url_hash', urlHash)
         .single()
 
@@ -335,10 +374,17 @@ async function handleSubmitRating(req: Request, supabase: any, userId: string) {
             message,
             urlStats: currentUrlStats || {
                 trust_score: null,
+                final_trust_score: null,
+                domain_trust_score: null,
+                community_trust_score: null,
+                content_type: 'general',
                 rating_count: 0,
+                average_rating: null,
                 spam_reports_count: 0,
                 misleading_reports_count: 0,
-                scam_reports_count: 0
+                scam_reports_count: 0,
+                domain: domain,
+                last_updated: null
             }
         }),
         {

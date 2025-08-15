@@ -312,8 +312,17 @@ BEGIN
 END;
 $$;
 
--- Enhanced batch aggregation function
-CREATE OR REPLACE FUNCTION enhanced_batch_aggregate_ratings()
+-- This function will be replaced by the updated batch_aggregate_ratings function below
+
+-- Update the existing cron job to use enhanced function
+-- First unschedule the old job if it exists
+SELECT cron.unschedule('aggregate-ratings-job');
+
+-- Replace the old function with our enhanced version
+DROP FUNCTION IF EXISTS batch_aggregate_ratings();
+
+-- Rename our enhanced function to match the existing cron job expectation
+CREATE OR REPLACE FUNCTION batch_aggregate_ratings()
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -323,15 +332,15 @@ DECLARE
     url_record RECORD;
     trust_scores RECORD;
 BEGIN
-    -- Process all URLs with unprocessed ratings
+    -- Process all URLs with unprocessed ratings using enhanced algorithm
     FOR url_record IN 
         SELECT DISTINCT url_hash 
         FROM ratings 
         WHERE processed = false
     LOOP
-        -- Calculate enhanced trust scores
+        -- Calculate enhanced trust scores (URL parameter is optional for existing records)
         SELECT * INTO trust_scores
-        FROM calculate_enhanced_trust_score(url_record.url_hash);
+        FROM calculate_enhanced_trust_score(url_record.url_hash, NULL);
         
         -- Get basic stats
         WITH stats AS (
@@ -397,13 +406,16 @@ BEGIN
 END;
 $$;
 
--- Update the cron job to use enhanced function
-SELECT cron.unschedule('aggregate-ratings-job');
+-- Keep the existing cron job schedule (every 5 minutes)
 SELECT cron.schedule(
-    'enhanced-aggregate-ratings-job',
+    'aggregate-ratings-job',
     '*/5 * * * *',
-    'SELECT enhanced_batch_aggregate_ratings();'
+    'SELECT batch_aggregate_ratings();'
 );
+
+-- Comments for the enhanced trust algorithm
+COMMENT ON FUNCTION calculate_enhanced_trust_score IS 'Calculates enhanced trust scores using domain and community factors';
+COMMENT ON FUNCTION batch_aggregate_ratings IS 'Enhanced batch processing with multi-factor trust scoring (replaces original function)';
 
 -- Function to refresh domain cache (call this periodically)
 CREATE OR REPLACE FUNCTION refresh_expired_domain_cache()

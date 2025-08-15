@@ -1,6 +1,7 @@
 // Batch Domain Analysis Edge Function
 // Analyzes multiple domains from url_stats that need cache refresh
 
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -27,7 +28,8 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    const { limit = 10 } = await req.json().catch(() => ({}))
+    const body = await req.json().catch(() => ({}))
+    const { limit = 10 } = body
 
     // Get domains that need analysis (no cache or expired cache)
     const { data: domainsToAnalyze, error: domainsError } = await supabase
@@ -85,7 +87,7 @@ serve(async (req) => {
         domain: batch[index],
         success: result.status === 'fulfilled',
         data: result.status === 'fulfilled' ? result.value : null,
-        error: result.status === 'rejected' ? result.reason?.message : null
+        error: result.status === 'rejected' ? (result.reason as Error)?.message || 'Unknown error' : null
       })))
 
       // Small delay between batches to be respectful to external APIs
