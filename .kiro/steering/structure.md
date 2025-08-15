@@ -35,12 +35,19 @@
 ```
 supabase/
 ├── functions/                    # Edge functions
-│   ├── rating-api/              # Rating CRUD operations
-│   ├── aggregate-ratings/       # Statistics aggregation
-│   ├── _shared/                 # Shared utilities
+│   ├── rating-api/              # Rating CRUD operations with domain analysis
+│   ├── aggregate-ratings/       # Enhanced statistics aggregation
+│   ├── domain-analyzer/         # External API integration for domain analysis
+│   ├── batch-domain-analysis/   # Batch processing for scalability
+│   ├── _shared/                 # Shared utilities (CORS, etc.)
 │   ├── deno.json               # Deno configuration
 │   └── import_map.json         # Import mappings
 └── migrations/                  # Database schema changes
+    ├── 20240101000000_create_rating_tables.sql
+    ├── 20240129000000_trust_score_aggregation.sql
+    ├── 20240129000001_trust_score_config.sql
+    ├── 20250815000000_enhanced_trust_algorithm.sql
+    └── 20250815000001_algorithm_config.sql
 ```
 
 ## File Naming Conventions
@@ -72,3 +79,6 @@ supabase/
 - `auth.js`: Supabase authentication handling
 - `popup.css`: Complete styling with CSS custom properties
 - `deno.json`: Backend runtime configuration
+- `TRUST_ALGORITHM.md`: Comprehensive documentation of the enhanced trust scoring system
+- `supabase/functions/domain-analyzer/`: External API integration for domain security analysis
+- `supabase/migrations/20250815000000_enhanced_trust_algorithm.sql`: Core enhanced algorithm implementation

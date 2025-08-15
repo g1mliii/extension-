@@ -13,8 +13,13 @@ The extension uses Supabase for backend authentication and data storage, providi
 
 ## Key Features
 
-- **Trust Score System**: Aggregated ratings displayed as a visual trust score
-- **Reporting System**: Users can flag content as spam, misleading, or scam
+- **Enhanced Trust Score System**: Multi-factor algorithm combining domain analysis (40%) and community ratings (60%)
+- **Domain Security Analysis**: Automated checking of SSL certificates, domain age, HTTP status, and external threat databases
+- **Content-Specific Scoring**: Different trust modifiers for articles, videos, social media, code repositories, etc.
+- **External API Integration**: Google Safe Browsing, PhishTank, and WHOIS data for comprehensive domain analysis
+- **Reporting System**: Users can flag content as spam, misleading, or scam with weighted penalties
+- **Smart Caching**: 7-day cache for expensive API calls to ensure scalability and cost efficiency
+- **Blacklist Management**: Pattern-based domain blocking with configurable severity levels
 - **User Authentication**: Email/password authentication via Supabase
-- **Real-time Statistics**: Live aggregation of ratings and reports
+- **Real-time Statistics**: Live aggregation of ratings and reports with performance monitoring
 - **Security Focus**: Includes recommendations for security tools (1Password, NordVPN)

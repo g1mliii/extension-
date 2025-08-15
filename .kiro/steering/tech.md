@@ -28,14 +28,30 @@
 # Start local Supabase
 supabase start
 
-# Deploy functions
+# Deploy all functions
 supabase functions deploy
+
+# Deploy specific functions
+supabase functions deploy rating-api
+supabase functions deploy domain-analyzer
+supabase functions deploy batch-domain-analysis
+supabase functions deploy aggregate-ratings
 
 # Generate types
 supabase gen types typescript --local > types/supabase.ts
 
-# Run migrations
+# Run migrations (includes enhanced trust algorithm)
 supabase db push
+
+# Test domain analysis
+curl -X POST "http://localhost:54321/functions/v1/domain-analyzer" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -d '{"domain": "example.com"}'
+
+# Batch analyze domains
+curl -X POST "http://localhost:54321/functions/v1/batch-domain-analysis" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -d '{"limit": 5}'
 ```
 
 ### Extension Development
@@ -53,3 +69,7 @@ supabase db push
 - Implements proper CSP (Content Security Policy) compliance
 - Modular CSS with CSS custom properties for theming
 - Glassmorphism UI design with backdrop filters
+- Multi-factor trust scoring algorithm with external API integration
+- Scalable caching system with 7-day TTL for domain analysis
+- Content-specific scoring for different URL types (articles, videos, social media)
+- Background processing for domain analysis to maintain UI responsiveness
