@@ -160,7 +160,7 @@ BEGIN
         community_trust_score = NULL;
     
     -- Run the enhanced aggregation
-    RETURN enhanced_batch_aggregate_ratings();
+    RETURN batch_aggregate_ratings();
 END;
 $$;
 

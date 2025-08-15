@@ -464,4 +464,4 @@ COMMENT ON TABLE domain_cache IS 'Caches expensive external API calls for domain
 COMMENT ON TABLE domain_blacklist IS 'Stores known malicious domains and patterns';
 COMMENT ON TABLE content_type_rules IS 'Rules for handling different content types (articles, videos, etc.)';
 COMMENT ON FUNCTION calculate_enhanced_trust_score IS 'Main enhanced trust score calculation with domain and content analysis';
-COMMENT ON FUNCTION enhanced_batch_aggregate_ratings IS 'Enhanced batch processing with multi-factor trust scoring';
+COMMENT ON FUNCTION batch_aggregate_ratings IS 'Enhanced batch processing with multi-factor trust scoring (replaces original function)';
