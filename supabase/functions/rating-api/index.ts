@@ -111,6 +111,17 @@ async function generateUrlHash(url: string): Promise<string> {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+// Utility to extract domain from URL
+function extractDomain(url: string): string {
+    try {
+        const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`)
+        return urlObj.hostname.replace(/^www\./, '')
+    } catch {
+        // Fallback for malformed URLs
+        return url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].split('?')[0]
+    }
+}
+
 async function handleGetUrlStats(req: Request, supabase: any) {
     const url = new URL(req.url)
     const targetUrl = url.searchParams.get('url')
@@ -200,6 +211,7 @@ async function handleSubmitRating(req: Request, supabase: any, userId: string) {
     }
 
     const urlHash = await generateUrlHash(targetUrl)
+    const domain = extractDomain(targetUrl)
 
     // Check if user has already rated this URL within the last 24 hours
     const { data: existingRating, error: fetchError } = await supabase
@@ -276,6 +288,39 @@ async function handleSubmitRating(req: Request, supabase: any, userId: string) {
             throw new Error(`Failed to submit rating: ${insertError.message}`)
         }
         message = 'Rating submitted successfully!'
+    }
+
+    // Update url_stats with domain information for future analysis
+    await supabase
+        .from('url_stats')
+        .upsert({
+            url_hash: urlHash,
+            domain: domain,
+            last_updated: new Date().toISOString()
+        })
+        .select()
+
+    // Trigger domain analysis for new domains (async, don't wait)
+    try {
+        const { data: existingCache } = await supabase
+            .from('domain_cache')
+            .select('domain')
+            .eq('domain', domain)
+            .single()
+
+        if (!existingCache) {
+            // Trigger domain analysis in background
+            fetch(`${supabaseUrl}/functions/v1/domain-analyzer`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`
+                },
+                body: JSON.stringify({ domain })
+            }).catch(err => console.log('Background domain analysis failed:', err))
+        }
+    } catch (err) {
+        console.log('Domain analysis trigger failed:', err)
     }
 
     // Fetch current URL stats after submission
