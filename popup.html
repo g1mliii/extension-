@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Rater - Trust Score</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <!-- Theme toggle removed - single dark mode only -->
+
+    <!-- Smart Header - Changes based on auth state -->
+    <div class="header logged-out" id="main-header">
+        <!-- Compact Login Form - Only visible when logged out -->
+        <div class="header-login" id="header-login">
+            <div class="login-row">
+                <input type="email" id="header-email" placeholder="Email">
+                <input type="password" id="header-password" placeholder="Password">
+            </div>
+            <div class="login-buttons">
+                <button id="header-login-btn">Login</button>
+                <button id="header-signup-btn">Sign Up</button>
+                <button id="header-forgot-password-btn" class="forgot-btn">Forgot?</button>
+            </div>
+        </div>
+        
+        <!-- Header Controls removed - will be re-added cleanly -->
+        <div class="header-controls">
+        </div>
+    </div>
+
+    <!-- Message bar removed -->
+
+    <!-- Clean Logout Button for Logged In State -->
+    <button id="logout-btn" class="clean-logout-btn" style="display: none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+    </button>
+
+    <!-- Trust Score Layout: Circle + Grid -->
+    <div class="trust-score-layout" id="trust-score-section">
+        <div class="score-main-row">
+            <!-- Trust Score Circle with tiny refresh button -->
+            <div class="score-circle-section">
+                <div class="score-circle-container">
+                    <!-- Circular Progress Bar SVG -->
+                    <svg class="circular-progress" viewBox="0 0 100 100">
+                        <circle class="progress-ring progress-ring-bg" cx="50" cy="50" r="45"/>
+                        <circle class="progress-ring progress-ring-fill" cx="50" cy="50" r="45" id="progress-ring"/>
+                    </svg>
+                    <div class="score-circle" id="score-circle">
+                        <div class="score-display">
+                            <div class="score-number" id="trust-score">N/A</div>
+                            <div class="score-label">Trust Score</div>
+                        </div>
+                    </div>
+                </div>
+                <button id="refresh-stats-btn" class="refresh-btn-tiny">↻</button>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="total-ratings">N/A</div>
+                    <div class="stat-label">Ratings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="spam-count">0</div>
+                    <div class="stat-label">Spam Reports</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="misleading-count">0</div>
+                    <div class="stat-label">Misleading</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="scam-count">0</div>
+                    <div class="stat-label">Scam Reports</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- URL Box (moved from below rating section) -->
+        <div class="url-display-box">
+            <span id="current-url">Loading...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+
+        <div id="auth-section">
+            <h2>Authentication</h2>
+            <div id="auth-status"></div>
+            <div id="login-form">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <div class="auth-buttons">
+                    <button id="login-btn">Login</button>
+                    <button id="signup-btn">Sign Up</button>
+                </div>
+                <button id="forgot-password-btn" class="link-btn">Forgot Password?</button>
+                <button id="resend-btn" style="display: none;">Resend Confirmation Email</button>
+            </div>
+        </div>
+
+        <div id="rating-section" style="display: none;">
+            <h2>Submit Your Rating & Report</h2>
+            
+            <div class="rating-form">
+                <div class="rating-input">
+                    <label for="rating-score">Rate this URL (1-5 stars):</label>
+                    <select id="rating-score">
+                        <option value="1">⭐ 1 - Very Poor</option>
+                        <option value="2">⭐⭐ 2 - Poor</option>
+                        <option value="3">⭐⭐⭐ 3 - Average</option>
+                        <option value="4">⭐⭐⭐⭐ 4 - Good</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+                    </select>
+                </div>
+
+                <div class="report-options">
+                    <div class="report-title">Report Issues (optional):</div>
+                    <label class="report-checkbox">
+                        <input type="checkbox" id="is-spam">
+                        <span class="checkmark"></span>
+                        Report as Spam
+                    </label>
+                    <label class="report-checkbox">
+                        <input type="checkbox" id="is-misleading">
+                        <span class="checkmark"></span>
+                        Report as Misleading
+                    </label>
+                    <label class="report-checkbox">
+                        <input type="checkbox" id="is-scam">
+                        <span class="checkmark"></span>
+                        Report as Scam
+                    </label>
+                </div>
+                
+                <button id="submit-rating-btn" class="submit-btn">Submit Rating</button>
+            </div>
+        </div>
+
+
+        </div>
+    </div>
+
+    <!-- Ad Space -->
+    <div class="ad-space">
+        <div class="ad-placeholder">Advertisement Space</div>
+    </div>
+
+    <!-- Affiliate Links Section -->
+    <div class="affiliate-section">
+        <div class="affiliate-title">Recommended Security Tools</div>
+        <div class="affiliate-links">
+            <a href="#" class="affiliate-link" id="affiliate-1password">
+                <div class="affiliate-icon">1P</div>
+                <span>1Password</span>
+            </a>
+            <a href="#" class="affiliate-link" id="affiliate-nordvpn">
+                <div class="affiliate-icon">VPN</div>
+                <span>NordVPN</span>
+            </a>
+        </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
