@@ -279,86 +279,27 @@ async function handleSubmitRating(req: Request, _route: RouteConfig, requestId: 
             }
         }
 
-        // Update url_stats with domain information and ensure enhanced scores are calculated for new URLs
+        // Update url_stats with domain information - let cron job handle enhanced score calculation
         try {
-            // First check if URL stats already exist
-            const { data: existingStats } = await supabase
+            const { error: upsertError } = await supabase
                 .from('url_stats')
-                .select('url_hash, data_source')
-                .eq('url_hash', urlHash)
-                .single()
+                .upsert({
+                    url_hash: urlHash,
+                    domain: domain,
+                    last_updated: new Date().toISOString(),
+                    last_accessed: new Date().toISOString()
+                }, {
+                    onConflict: 'url_hash'
+                })
 
-            if (!existingStats) {
-                // This is a new URL, calculate enhanced scores and save
-                try {
-                    const { data: enhancedScores, error: enhancedError } = await supabase
-                        .rpc('calculate_enhanced_trust_score', {
-                            p_url_hash: urlHash,
-                            p_url: validatedUrl
-                        })
-                        .single()
-
-                    if (!enhancedError && enhancedScores) {
-                        // Insert new URL stats with enhanced scores
-                        const { error: insertError } = await supabase
-                            .from('url_stats')
-                            .insert({
-                                url_hash: urlHash,
-                                domain: domain,
-                                domain_trust_score: enhancedScores.domain_score,
-                                community_trust_score: enhancedScores.community_score,
-                                final_trust_score: enhancedScores.final_score,
-                                trust_score: enhancedScores.final_score,
-                                content_type: enhancedScores.content_type,
-                                rating_count: 0,
-                                average_rating: null,
-                                spam_reports_count: 0,
-                                misleading_reports_count: 0,
-                                scam_reports_count: 0,
-                                last_updated: new Date().toISOString(),
-                                last_accessed: new Date().toISOString(),
-                                data_source: 'enhanced'
-                            })
-
-                        if (insertError) {
-                            console.error('Failed to insert enhanced URL stats:', insertError.message)
-                        } else {
-                            console.log(`Enhanced trust scores calculated and saved for new URL ${urlHash}`)
-                        }
-                    }
-                } catch (enhancedError) {
-                    console.warn('Could not calculate enhanced trust scores for new URL:', enhancedError.message)
-                    // Fallback to basic upsert
-                    const { error: upsertError } = await supabase
-                        .from('url_stats')
-                        .upsert({
-                            url_hash: urlHash,
-                            domain: domain,
-                            last_updated: new Date().toISOString(),
-                            last_accessed: new Date().toISOString()
-                        }, {
-                            onConflict: 'url_hash'
-                        })
-
-                    if (upsertError) {
-                        console.error('Database upsert error:', upsertError.message)
-                    }
-                }
+            if (upsertError) {
+                console.error('Database upsert error:', upsertError.message)
+                // Don't fail the main operation for upsert errors
             } else {
-                // URL stats exist, just update access time
-                const { error: updateError } = await supabase
-                    .from('url_stats')
-                    .update({
-                        last_accessed: new Date().toISOString()
-                    })
-                    .eq('url_hash', urlHash)
-
-                if (updateError) {
-                    console.error('Failed to update last_accessed:', updateError.message)
-                }
+                console.log(`URL stats updated for ${urlHash}, enhanced scores will be calculated by cron job`)
             }
         } catch (error) {
-            console.error('Exception during url_stats handling:', error.message)
+            console.error('Exception during url_stats upsert:', error.message)
             // Don't fail the main operation for database errors
         }
 
@@ -442,61 +383,13 @@ async function getUrlStats(supabase: any, urlHash: string, url?: string) {
             }
         }
 
-        // If we have existing data, just return it (enhanced scores should already be saved)
+        // Return existing data if found - enhanced scores are handled by cron job
         if (data) {
             return data
         }
 
-        // Only calculate enhanced scores for completely new URLs (no existing data)
-        if (url && !data) {
-            try {
-                const { data: enhancedScores, error: enhancedError } = await supabase
-                    .rpc('calculate_enhanced_trust_score', {
-                        p_url_hash: urlHash,
-                        p_url: url
-                    })
-                    .single()
-
-                if (!enhancedError && enhancedScores) {
-                    // Create new data object with enhanced scores and save to database
-                    const newUrlStats = {
-                        url_hash: urlHash,
-                        domain_trust_score: enhancedScores.domain_score,
-                        community_trust_score: enhancedScores.community_score,
-                        final_trust_score: enhancedScores.final_score,
-                        trust_score: enhancedScores.final_score,
-                        content_type: enhancedScores.content_type,
-                        rating_count: 0,
-                        average_rating: null,
-                        spam_reports_count: 0,
-                        misleading_reports_count: 0,
-                        scam_reports_count: 0,
-                        last_updated: new Date().toISOString(),
-                        data_source: 'enhanced'
-                    }
-
-                    // Save enhanced scores to database for future use
-                    try {
-                        const { error: insertError } = await supabase
-                            .from('url_stats')
-                            .insert(newUrlStats)
-
-                        if (insertError) {
-                            console.warn(`Failed to save enhanced scores for ${urlHash}:`, insertError.message)
-                        } else {
-                            console.log(`Enhanced trust scores calculated and saved for new URL ${urlHash}`)
-                        }
-                    } catch (saveError) {
-                        console.warn(`Exception saving enhanced scores for ${urlHash}:`, saveError.message)
-                    }
-
-                    return newUrlStats
-                }
-            } catch (enhancedError) {
-                console.warn('Could not calculate enhanced trust scores:', enhancedError.message)
-                // Continue with basic stats if enhanced calculation fails
-            }
-        }
+        // For new URLs with no data, return null - cron job will calculate enhanced scores
+        // This prevents duplicate calculations and ensures consistency
 
         return data
     } catch (error) {
