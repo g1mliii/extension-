@@ -20,6 +20,10 @@
 - **Authentication Flow**: PKCE flow for secure auth
 - **State Management**: Browser extension storage API
 - **Error Handling**: Custom error classes with proper error propagation
+- **Processing Status**: Multi-level URL processing (community_only → enhanced_with_domain_analysis)
+- **Security**: RLS policies with service role for database operations
+- **State Management**: Browser extension storage API
+- **Error Handling**: Custom error classes with proper error propagation
 
 ## Common Commands
 
@@ -31,11 +35,13 @@ supabase start
 # Deploy all functions
 supabase functions deploy
 
-# Deploy specific functions
-supabase functions deploy rating-api
-supabase functions deploy domain-analyzer
+# Deploy specific functions (current active functions)
+supabase functions deploy url-trust-api
+supabase functions deploy trust-admin
+supabase functions deploy trust-score-api
 supabase functions deploy batch-domain-analysis
 supabase functions deploy aggregate-ratings
+supabase functions deploy rating-submission
 
 # Generate types
 supabase gen types typescript --local > types/supabase.ts
@@ -43,10 +49,20 @@ supabase gen types typescript --local > types/supabase.ts
 # Run migrations (includes enhanced trust algorithm)
 supabase db push
 
+# Test unified API
+curl -X GET "http://localhost:54321/functions/v1/url-trust-api/url-stats?url=https://example.com" \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
+
+# Test rating submission
+curl -X POST "http://localhost:54321/functions/v1/url-trust-api/rating" \
+  -H "Authorization: Bearer YOUR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "score": 4, "isSpam": false}'
+
 # Test domain analysis
-curl -X POST "http://localhost:54321/functions/v1/domain-analyzer" \
+curl -X POST "http://localhost:54321/functions/v1/batch-domain-analysis" \
   -H "Authorization: Bearer YOUR_ANON_KEY" \
-  -d '{"domain": "example.com"}'
+  -d '{"limit": 1}'
 
 # Batch analyze domains
 curl -X POST "http://localhost:54321/functions/v1/batch-domain-analysis" \
@@ -73,3 +89,13 @@ curl -X POST "http://localhost:54321/functions/v1/batch-domain-analysis" \
 - Scalable caching system with 7-day TTL for domain analysis
 - Content-specific scoring for different URL types (articles, videos, social media)
 - Background processing for domain analysis to maintain UI responsiveness
+- **Unified API**: `url-trust-api` function serves as main entry point for all operations
+- **Service Role Authentication**: Uses service role approach with JWT validation for security
+- **Smart Caching**: Frontend implements 5-minute localStorage caching with batch request queuing
+- **Error Handling**: Comprehensive error logging with standardized response formats
+
+## Current Issues Being Addressed
+- **Domain Cache 406 Error**: Investigating 406 "Not Acceptable" responses when checking domain_cache table
+- **Security Warnings**: Fixing "Function Search Path Mutable" warnings for 19 database functions
+- **UI Issues**: Trust score percentage bar display accuracy and rating submission feedback
+- **Auth Settings**: Reducing OTP expiry and enabling leaked password protection

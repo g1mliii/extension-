@@ -1,13 +1,14 @@
 // Trust Algorithm Administration API
 // Manages blacklists, configuration, and manual domain analysis
 
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const googleApiKey = Deno.env.get('GOOGLE_SAFE_BROWSING_API_KEY')
+const hybridApiKey = Deno.env.get('HYBRID_ANALYSIS_API_KEY')
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,28 +36,28 @@ serve(async (req) => {
     switch (true) {
       case req.method === 'GET' && path === '/blacklist':
         return await handleGetBlacklist(req, supabase)
-      
+
       case req.method === 'POST' && path === '/blacklist':
         return await handleAddBlacklist(req, supabase)
-      
+
       case req.method === 'DELETE' && path.startsWith('/blacklist/'):
         return await handleDeleteBlacklist(req, supabase, path)
-      
+
       case req.method === 'GET' && path === '/config':
         return await handleGetConfig(req, supabase)
-      
+
       case req.method === 'POST' && path === '/config':
         return await handleUpdateConfig(req, supabase)
-      
+
       case req.method === 'POST' && path === '/recalculate':
         return await handleRecalculate(req, supabase)
-      
+
       case req.method === 'GET' && path === '/analytics':
         return await handleGetAnalytics(req, supabase)
-      
+
       case req.method === 'POST' && path === '/analyze-domain':
         return await handleAnalyzeDomain(req, supabase)
-      
+
       default:
         return new Response(
           JSON.stringify({ error: 'Endpoint not found' }),
@@ -271,24 +272,282 @@ async function handleAnalyzeDomain(req: Request, supabase: any) {
     )
   }
 
-  // Call the domain analyzer function
-  const response = await fetch(`${supabaseUrl}/functions/v1/domain-analyzer`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseServiceKey}`
-    },
-    body: JSON.stringify({ domain, force })
-  })
+  try {
+    // Check if domain already has recent cache (unless force is true)
+    if (!force) {
+      const { data: cachedData } = await supabase
+        .from('domain_cache')
+        .select('*')
+        .eq('domain', domain)
+        .gt('cache_expires_at', new Date().toISOString())
+        .single()
 
-  if (!response.ok) {
-    throw new Error(`Domain analysis failed: ${response.statusText}`)
+      if (cachedData) {
+        return new Response(
+          JSON.stringify({
+            message: 'Domain already has recent analysis',
+            data: cachedData,
+            from_cache: true
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    // Perform domain analysis
+    console.log('Starting admin domain analysis for:', domain)
+    const analysis = await performDomainAnalysis(domain)
+
+    // Store in cache
+    const cacheData = {
+      domain,
+      domain_age_days: analysis.domainAge,
+      whois_data: analysis.whoisData || null,
+      http_status: analysis.httpStatus,
+      ssl_valid: analysis.sslValid,
+      google_safe_browsing_status: analysis.googleSafeBrowsingStatus,
+      hybrid_analysis_status: analysis.hybridAnalysisStatus,
+      threat_score: analysis.threatScore,
+      last_checked: new Date().toISOString(),
+      cache_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    }
+
+    const { error: cacheError } = await supabase
+      .from('domain_cache')
+      .upsert(cacheData)
+
+    if (cacheError) {
+      console.error('Error caching domain data:', cacheError)
+      throw new Error(`Failed to cache domain analysis: ${cacheError.message}`)
+    }
+
+    return new Response(
+      JSON.stringify({
+        message: 'Domain analysis completed successfully',
+        data: analysis,
+        cached_data: cacheData,
+        from_cache: false
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+
+  } catch (error) {
+    console.error('Domain analysis error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+}
+// Domain analysis functions (copied from rating-api)
+async function performDomainAnalysis(domain: string) {
+  console.log('Starting domain analysis for:', domain)
+
+  const result: any = { domain }
+
+  try {
+    // 1. HTTP Status and SSL Check
+    await checkHttpAndSsl(domain, result)
+
+    // 2. Domain Age (heuristic)
+    result.domainAge = getDomainAge(domain)
+
+    // 3. Google Safe Browsing
+    if (googleApiKey) {
+      await checkGoogleSafeBrowsing(domain, result)
+    } else {
+      result.googleSafeBrowsingStatus = getHeuristicSafeBrowsing(domain)
+    }
+
+    // 4. Hybrid Analysis
+    if (hybridApiKey) {
+      await checkHybridAnalysis(domain, result)
+    } else {
+      result.hybridAnalysisStatus = 'clean'
+    }
+
+    // 5. Calculate threat score
+    result.threatScore = calculateThreatScore(result)
+
+    console.log('Domain analysis complete for:', domain)
+
+  } catch (error) {
+    console.error('Domain analysis error for', domain, ':', error)
+    result.error = error.message
   }
 
-  const result = await response.json()
+  return result
+}
 
-  return new Response(
-    JSON.stringify(result),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+async function checkHttpAndSsl(domain: string, result: any) {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(`https://${domain}`, {
+      method: 'HEAD',
+      signal: controller.signal,
+      redirect: 'follow'
+    })
+
+    clearTimeout(timeoutId)
+
+    result.httpStatus = response.status
+    result.sslValid = response.url.startsWith('https://')
+
+  } catch (error) {
+    try {
+      const response = await fetch(`http://${domain}`, {
+        method: 'HEAD',
+        redirect: 'follow'
+      })
+      result.httpStatus = response.status
+      result.sslValid = false
+    } catch (httpError) {
+      result.httpStatus = 0
+      result.sslValid = false
+    }
+  }
+}
+
+function getDomainAge(domain: string): number {
+  const wellKnownDomains: { [key: string]: number } = {
+    'google.com': 365 * 25, 'youtube.com': 365 * 18, 'facebook.com': 365 * 20,
+    'amazon.com': 365 * 28, 'apple.com': 365 * 30, 'microsoft.com': 365 * 35,
+    'twitter.com': 365 * 17, 'x.com': 365 * 17, 'instagram.com': 365 * 13,
+    'linkedin.com': 365 * 20, 'reddit.com': 365 * 18, 'github.com': 365 * 15,
+    'stackoverflow.com': 365 * 15, 'wikipedia.org': 365 * 22
+  }
+
+  if (wellKnownDomains[domain]) {
+    return wellKnownDomains[domain]
+  }
+
+  if (domain.endsWith('.edu') || domain.endsWith('.gov')) return 365 * 15
+  if (domain.endsWith('.org')) return 365 * 10
+  if (domain.match(/\.(tk|ml|ga|cf)$/)) return 365 * 1
+
+  return 365 * 3
+}
+
+async function checkGoogleSafeBrowsing(domain: string, result: any) {
+  try {
+    const response = await fetch(
+      `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${googleApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: {
+            clientId: 'url-rating-extension-admin',
+            clientVersion: '1.0.0'
+          },
+          threatInfo: {
+            threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE'],
+            platformTypes: ['ANY_PLATFORM'],
+            threatEntryTypes: ['URL'],
+            threatEntries: [
+              { url: `http://${domain}/` },
+              { url: `https://${domain}/` }
+            ]
+          }
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (data.matches && data.matches.length > 0) {
+      const threatType = data.matches[0].threatType
+      switch (threatType) {
+        case 'MALWARE': result.googleSafeBrowsingStatus = 'malware'; break
+        case 'SOCIAL_ENGINEERING': result.googleSafeBrowsingStatus = 'phishing'; break
+        case 'UNWANTED_SOFTWARE': result.googleSafeBrowsingStatus = 'unwanted'; break
+        default: result.googleSafeBrowsingStatus = 'suspicious'
+      }
+    } else {
+      result.googleSafeBrowsingStatus = 'safe'
+    }
+
+  } catch (error) {
+    console.error('Google Safe Browsing check failed:', error)
+    result.googleSafeBrowsingStatus = 'unknown'
+  }
+}
+
+function getHeuristicSafeBrowsing(domain: string): string {
+  const trustedDomains = [
+    'google.com', 'youtube.com', 'facebook.com', 'twitter.com', 'x.com',
+    'instagram.com', 'linkedin.com', 'github.com', 'stackoverflow.com',
+    'wikipedia.org', 'reddit.com', 'amazon.com', 'apple.com', 'microsoft.com'
+  ]
+
+  if (trustedDomains.includes(domain)) return 'safe'
+  if (domain.match(/\.(tk|ml|ga|cf)$/)) return 'suspicious'
+
+  return 'safe'
+}
+
+async function checkHybridAnalysis(domain: string, result: any) {
+  try {
+    const response = await fetch(`https://www.hybrid-analysis.com/api/v2/search/terms`, {
+      method: 'POST',
+      headers: {
+        'api-key': hybridApiKey!,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'URL Rating Extension Admin'
+      },
+      body: new URLSearchParams({
+        'domain': domain,
+        'country': 'all',
+        'verdict': 'all'
+      })
+    })
+
+    const data = await response.json()
+
+    if (data.result && data.result.length > 0) {
+      const maliciousReports = data.result.filter((report: any) =>
+        report.verdict === 'malicious' || report.threat_score >= 70
+      )
+
+      if (maliciousReports.length > 0) {
+        result.hybridAnalysisStatus = 'malicious'
+      } else {
+        result.hybridAnalysisStatus = 'clean'
+      }
+    } else {
+      result.hybridAnalysisStatus = 'clean'
+    }
+
+  } catch (error) {
+    console.error('Hybrid Analysis check failed:', error)
+    result.hybridAnalysisStatus = 'unknown'
+  }
+}
+
+function calculateThreatScore(result: any): number {
+  let threatScore = 0
+  let totalChecks = 0
+
+  if (result.googleSafeBrowsingStatus) {
+    totalChecks++
+    switch (result.googleSafeBrowsingStatus) {
+      case 'malware': threatScore += 60; break
+      case 'phishing': threatScore += 55; break
+      case 'unwanted': threatScore += 40; break
+      case 'safe': threatScore += 0; break
+    }
+  }
+
+  if (result.hybridAnalysisStatus) {
+    totalChecks++
+    switch (result.hybridAnalysisStatus) {
+      case 'malicious': threatScore += 40; break
+      case 'suspicious': threatScore += 25; break
+      case 'clean': threatScore += 0; break
+    }
+  }
+
+  return totalChecks > 0 ? Math.round(threatScore / totalChecks) : 0
 }

@@ -1,5 +1,35 @@
-# Environment variables
+# Environment variables and config files
 .env
+.env.*
+config.js
+auth-config.js
+secrets.json
+credentials.json
+
+# Extension config (contains API keys)
+extension/config.js
+
+# But allow production config for Chrome Web Store builds
+!extension/config.production.js
+
+# API keys and sensitive data
+*api-key*
+*secret*
+*credential*
+
+# Test files (prevent future test file commits)
+test-*.js
+test-*.ts
+debug-*.js
+*-test.js
+*-debug.js
+test_extension_integration.js
+
+# Temporary documentation
+TASK_*_COMPLETION_SUMMARY.md
+
+# SQL cleanup files
+database_cleanup_and_fixes.sql
 
 # Node modules
 node_modules/

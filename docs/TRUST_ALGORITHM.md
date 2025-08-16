@@ -153,7 +153,7 @@ trust_algorithm_config (config_key, config_value, description, ...)
 ### Submit Rating with Domain Analysis
 ```javascript
 // Rating submission automatically triggers domain analysis
-const response = await fetch('/functions/v1/rating-api/rating', {
+const response = await fetch('/functions/v1/url-trust-api/rating', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${token}` },
   body: JSON.stringify({
@@ -167,7 +167,7 @@ const response = await fetch('/functions/v1/rating-api/rating', {
 ### Get Enhanced Trust Score
 ```javascript
 // Retrieve comprehensive trust information
-const response = await fetch('/functions/v1/rating-api/url-stats?url=https://example.com');
+const response = await fetch('/functions/v1/url-trust-api/url-stats?url=https://example.com');
 const data = await response.json();
 // Returns: final_trust_score, domain_trust_score, community_trust_score, content_type
 ```
@@ -248,9 +248,10 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 supabase db push
 
 # Deploy edge functions
-supabase functions deploy domain-analyzer
+supabase functions deploy trust-admin
+supabase functions deploy trust-score-api
 supabase functions deploy batch-domain-analysis
-supabase functions deploy rating-api
+supabase functions deploy url-trust-api
 supabase functions deploy aggregate-ratings
 ```
 

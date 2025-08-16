@@ -1,7 +1,6 @@
 // Public Trust Score API
 // Provides enhanced trust score data for URLs
 
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -24,7 +23,7 @@ serve(async (req) => {
 
     // Route handling
     switch (true) {
-      case req.method === 'GET' && path === '/score':
+      case req.method === 'GET' && (path === '/score' || path === ''):
         return await handleGetTrustScore(req, supabase)
       
       case req.method === 'POST' && path === '/batch-scores':

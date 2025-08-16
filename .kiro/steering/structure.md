@@ -35,11 +35,13 @@
 ```
 supabase/
 ├── functions/                    # Edge functions
-│   ├── rating-api/              # Rating CRUD operations with domain analysis
-│   ├── aggregate-ratings/       # Enhanced statistics aggregation
-│   ├── domain-analyzer/         # External API integration for domain analysis
+│   ├── url-trust-api/           # 🎯 MAIN UNIFIED API - handles all URL stats and rating operations
+│   ├── rating-submission/       # Rating submission with authentication and domain analysis triggering
+│   ├── aggregate-ratings/       # Enhanced statistics aggregation (cron job)
+│   ├── trust-admin/             # Admin functions for trust algorithm management
+│   ├── trust-score-api/         # Public API for trust score queries
 │   ├── batch-domain-analysis/   # Batch processing for scalability
-│   ├── _shared/                 # Shared utilities (CORS, etc.)
+│   ├── _shared/                 # Shared utilities (CORS, routing, error handling)
 │   ├── deno.json               # Deno configuration
 │   └── import_map.json         # Import mappings
 └── migrations/                  # Database schema changes
@@ -47,8 +49,13 @@ supabase/
     ├── 20240129000000_trust_score_aggregation.sql
     ├── 20240129000001_trust_score_config.sql
     ├── 20250815000000_enhanced_trust_algorithm.sql
-    └── 20250815000001_algorithm_config.sql
+    ├── 20250815000001_algorithm_config.sql
+    └── 20250816000003_database_compatibility_final.sql
 ```
+
+## Obsolete Functions (To Be Removed)
+- `rating-api-test/` - Replaced by `url-trust-api`
+- `test-routing-fix/` - Replaced by `url-trust-api`
 
 ## File Naming Conventions
 
@@ -75,10 +82,15 @@ supabase/
 ## Important Files
 
 - `manifest.json`: Extension configuration and permissions
-- `popup.js`: Main application logic and UI interactions
+- `popup.js`: Main application logic and UI interactions (updated for unified API)
 - `auth.js`: Supabase authentication handling
-- `popup.css`: Complete styling with CSS custom properties
+- `popup.css`: Complete styling with CSS custom properties (needs percentage bar fix)
 - `deno.json`: Backend runtime configuration
 - `TRUST_ALGORITHM.md`: Comprehensive documentation of the enhanced trust scoring system
-- `supabase/functions/domain-analyzer/`: External API integration for domain security analysis
+- `supabase/functions/url-trust-api/`: 🎯 **MAIN UNIFIED API** - primary entry point for all operations
+- `supabase/functions/_shared/routing.ts`: Shared routing utilities with error handling
+- `supabase/functions/trust-admin/`: Admin functions for blacklist and configuration management
+- `supabase/functions/trust-score-api/`: Public API for trust score queries and batch operations
 - `supabase/migrations/20250815000000_enhanced_trust_algorithm.sql`: Core enhanced algorithm implementation
+- `supabase/migrations/20250816000003_database_compatibility_final.sql`: Latest database compatibility fixes
+- `Supabase Performance Security Lints (giddaacemfxshmnzhydb).csv`: Security warnings to be addressed

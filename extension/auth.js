@@ -1,8 +1,11 @@
 // rating-extension/auth.js
 
+// Import configuration
+import { CONFIG } from './config.js';
+
 // Supabase configuration
-const SUPABASE_URL = 'https://giddaacemfxshmnzhydb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGRhYWNlbWZ4c2htbnpoeWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwOTQ1MDUsImV4cCI6MjA2ODY3MDUwNX0.rSNs9jRLfOuPVYSeHswobvaGidPQfi78RUtD4p9unIY';
+const SUPABASE_URL = CONFIG.SUPABASE_URL;
+const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY;
 
 // Global variable to hold supabase client
 let supabase = null;
@@ -78,9 +81,14 @@ export async function signOut() {
  * @returns {Promise<{session: object|null, error: Error|null}>}
  */
 export async function getSession() {
-    const client = await initSupabase();
-    const { data: { session }, error } = await client.auth.getSession();
-    return { session, error };
+    try {
+        const client = await initSupabase();
+        const { data: { session }, error } = await client.auth.getSession();
+        return { session, error };
+    } catch (error) {
+        console.warn('Error getting session:', error);
+        return { session: null, error };
+    }
 }
 
 /**

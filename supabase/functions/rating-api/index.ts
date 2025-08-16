@@ -1,395 +1,293 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-serve(async (req) => {
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
+// Route configuration with proper method validation
+interface RouteConfig {
+    method: string
+    path: string
+    handler: string
+    requiresAuth: boolean
+    description: string
+}
+
+const ROUTES: RouteConfig[] = [
+    {
+        method: 'GET',
+        path: '/url-stats',
+        handler: 'handleGetUrlStats',
+        requiresAuth: false,
+        description: 'Fetch URL statistics and trust scores'
+    },
+    {
+        method: 'POST', 
+        path: '/rating',
+        handler: 'handleSubmitRating',
+        requiresAuth: true,
+        description: 'Submit rating and reports for a URL'
+    },
+    {
+        method: 'OPTIONS',
+        path: '*',
+        handler: 'handleCors',
+        requiresAuth: false,
+        description: 'CORS preflight requests'
+    }
+]
+
+// Custom error classes
+class ApiError extends Error {
+    constructor(public message: string, public statusCode: number, public code: string) {
+        super(message)
+        this.name = 'ApiError'
+    }
+}
+
+class ValidationError extends ApiError {
+    constructor(message: string) {
+        super(message, 400, 'VALIDATION_ERROR')
+    }
+}
+
+class AuthError extends ApiError {
+    constructor(message: string) {
+        super(message, 401, 'AUTH_ERROR')
+    }
+}
+
+class NotFoundError extends ApiError {
+    constructor(message: string) {
+        super(message, 404, 'NOT_FOUND')
+    }
+}
+
+// Robust path parsing logic that correctly handles Supabase function routing
+function parseRequestPath(requestUrl: string): string {
+    try {
+        const url = new URL(requestUrl)
+        const pathSegments = url.pathname.split('/').filter(Boolean)
+        
+        // Supabase strips /functions/v1/ prefix, so first segment is function name
+        // Everything after the function name is the route path
+        if (pathSegments.length > 1 && pathSegments[0] === 'rating-api') {
+            return '/' + pathSegments.slice(1).join('/')
+        } else if (pathSegments.length === 1 && pathSegments[0] === 'rating-api') {
+            return '/'
+        }
+        
+        // Fallback - treat entire path as route
+        return '/' + pathSegments.join('/')
+    } catch (error) {
+        throw new ValidationError(`Invalid URL format: ${error.message}`)
+    }
+}
+
+// Route matching and validation
+function findRoute(method: string, path: string): RouteConfig | null {
+    // Handle OPTIONS requests for any path (CORS preflight)
+    if (method === 'OPTIONS') {
+        return ROUTES.find(route => route.method === 'OPTIONS') || null
+    }
+    
+    // Handle root path requests - route to url-stats for GET, rating for POST
+    if (path === '/' || path === '') {
+        if (method === 'GET') {
+            return ROUTES.find(route => route.method === 'GET' && route.path === '/url-stats') || null
+        }
+        if (method === 'POST') {
+            return ROUTES.find(route => route.method === 'POST' && route.path === '/rating') || null
+        }
+    }
+    
+    // Find exact match for method and path
+    return ROUTES.find(route => 
+        route.method === method && route.path === path
+    ) || null
+}
+
+// Generate unique request ID for error tracking
+function generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+}
+
+// Standardized error response handler
+function handleError(error: any, requestId: string): Response {
+    console.error(`Request ${requestId} failed:`, {
+        error: error.message,
+        stack: error.stack,
+        type: error.constructor.name
+    })
+    
+    let statusCode = 500
+    let errorCode = 'INTERNAL_ERROR'
+    let message = 'Internal server error'
+    
+    if (error instanceof ApiError) {
+        statusCode = error.statusCode
+        errorCode = error.code
+        message = error.message
+    }
+    
+    const errorResponse = {
+        error: message,
+        code: errorCode,
+        timestamp: new Date().toISOString(),
+        request_id: requestId
+    }
+    
+    return new Response(JSON.stringify(errorResponse), {
+        status: statusCode,
+        headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+        }
+    })
+}
+
+// Authentication validation
+async function validateAuthentication(req: Request) {
+    const authHeader = req.headers.get('Authorization')
+    
+    if (!authHeader) {
+        throw new AuthError('Authorization header required')
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+        throw new AuthError('Authorization header must use Bearer token format')
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    
+    if (!token.trim()) {
+        throw new AuthError('Authorization token cannot be empty')
+    }
+    
+    // Create authenticated supabase client
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        },
+        global: {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    })
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError) {
+        throw new AuthError(`Token validation failed: ${authError.message}`)
+    }
+    
+    if (!user) {
+        throw new AuthError('Invalid or expired token')
+    }
+    
+    return { user, supabase }
+}
+
+// URL Stats handler
+async function handleGetUrlStats(req: Request): Promise<Response> {
+    try {
+        const url = new URL(req.url)
+        const targetUrl = url.searchParams.get('url')
+
+        if (!targetUrl) {
+            throw new ValidationError('URL parameter is required')
+        }
+
+        // For now, return a simple response to test routing
+        return new Response(JSON.stringify({
+            success: true,
+            message: 'GET /url-stats endpoint working!',
+            url: targetUrl,
+            timestamp: new Date().toISOString()
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+    } catch (error) {
+        console.error('Error in handleGetUrlStats:', error)
+        throw error
+    }
+}
+
+// Rating submission handler
+async function handleSubmitRating(req: Request, supabase: any, userId: string): Promise<Response> {
+    try {
+        const body = await req.json()
+        
+        // For now, return a simple response to test routing
+        return new Response(JSON.stringify({
+            success: true,
+            message: 'POST /rating endpoint working!',
+            userId: userId,
+            body: body,
+            timestamp: new Date().toISOString()
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+    } catch (error) {
+        console.error('Error in handleSubmitRating:', error)
+        throw error
+    }
+}
+
+// Centralized request router
+async function routeRequest(req: Request): Promise<Response> {
+    const method = req.method
+    const path = parseRequestPath(req.url)
+    
+    // Find matching route
+    const route = findRoute(method, path)
+    
+    if (!route) {
+        const allowedRoutes = ROUTES
+            .filter(r => r.method !== 'OPTIONS')
+            .map(r => `${r.method} ${r.path}`)
+            .join(', ')
+        
+        throw new NotFoundError(
+            `Route not found: ${method} ${path}. Available routes: ${allowedRoutes}`
+        )
+    }
+    
+    // Handle CORS preflight
+    if (method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
+    
+    // Validate authentication if required
+    let authContext = null
+    if (route.requiresAuth) {
+        authContext = await validateAuthentication(req)
+    }
+    
+    // Route to appropriate handler
+    switch (route.handler) {
+        case 'handleGetUrlStats':
+            return await handleGetUrlStats(req)
+        case 'handleSubmitRating':
+            if (!authContext) {
+                throw new AuthError('Authentication required but not provided')
+            }
+            return await handleSubmitRating(req, authContext.supabase, authContext.user.id)
+        default:
+            throw new NotFoundError(`Handler not implemented: ${route.handler}`)
+    }
+}
 
+serve(async (req) => {
+    const requestId = generateRequestId()
+    
     try {
-        // Get auth header if present
-        const authHeader = req.headers.get('Authorization')
-        
-        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false
-            },
-            global: authHeader ? {
-                headers: {
-                    Authorization: authHeader
-                }
-            } : undefined
-        })
-
-        const url = new URL(req.url)
-        // Remove both the functions prefix and the function name
-        const path = url.pathname.replace('/functions/v1/rating-api', '').replace('/rating-api', '')
-
-
-
-        // Route handling
-        if (req.method === 'GET' && path === '/url-stats') {
-            // URL stats can be viewed without authentication
-            return await handleGetUrlStats(req, supabase)
-        } else if (req.method === 'POST' && path === '/rating') {
-            // Rating submission requires authentication
-            const authHeader = req.headers.get('Authorization')
-            if (!authHeader) {
-                return new Response(
-                    JSON.stringify({ error: 'Authorization header required for rating submission' }),
-                    {
-                        status: 401,
-                        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                    }
-                )
-            }
-
-            // Verify the JWT token and create authenticated client
-            const token = authHeader.replace('Bearer ', '')
-            
-            // Create authenticated supabase client
-            const authenticatedSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                },
-                global: {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            })
-
-            const { data: { user }, error: authError } = await authenticatedSupabase.auth.getUser()
-
-            if (authError || !user) {
-                return new Response(
-                    JSON.stringify({ error: 'Invalid token' }),
-                    {
-                        status: 401,
-                        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                    }
-                )
-            }
-
-            return await handleSubmitRating(req, authenticatedSupabase, user.id)
-        } else {
-            return new Response(
-                JSON.stringify({ error: 'Not found' }),
-                {
-                    status: 404,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                }
-            )
-        }
-
+        return await routeRequest(req)
     } catch (error: any) {
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            {
-                status: 500,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-        )
+        return handleError(error, requestId)
     }
 })
-
-// Utility to generate URL hash
-async function generateUrlHash(url: string): Promise<string> {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(url)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-// Utility to extract domain from URL
-function extractDomain(url: string): string {
-    try {
-        const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`)
-        return urlObj.hostname.replace(/^www\./, '')
-    } catch {
-        // Fallback for malformed URLs
-        return url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].split('?')[0]
-    }
-}
-
-async function handleGetUrlStats(req: Request, supabase: any) {
-    const url = new URL(req.url)
-    const targetUrl = url.searchParams.get('url')
-
-    if (!targetUrl) {
-        return new Response(
-            JSON.stringify({ error: 'URL parameter is required' }),
-            {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-        )
-    }
-
-    const urlHash = await generateUrlHash(targetUrl)
-
-    const { data, error } = await supabase
-        .from('url_stats')
-        .select(`
-            trust_score, 
-            final_trust_score,
-            domain_trust_score,
-            community_trust_score,
-            content_type,
-            rating_count, 
-            average_rating,
-            spam_reports_count, 
-            misleading_reports_count, 
-            scam_reports_count,
-            domain,
-            last_updated
-        `)
-        .eq('url_hash', urlHash)
-        .single()
-
-    if (error && error.code === 'PGRST116') {
-        // No stats found
-        return new Response(
-            JSON.stringify({
-                url: targetUrl,
-                url_hash: urlHash,
-                domain: extractDomain(targetUrl),
-                trust_score: null,
-                final_trust_score: null,
-                domain_trust_score: null,
-                community_trust_score: null,
-                content_type: 'general',
-                rating_count: 0,
-                average_rating: null,
-                spam_reports_count: 0,
-                misleading_reports_count: 0,
-                scam_reports_count: 0,
-                last_updated: null,
-                message: 'No stats found for this URL yet.'
-            }),
-            {
-                status: 200,
-                headers: { 
-                    ...corsHeaders, 
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
-                    'CDN-Cache-Control': 'public, max-age=60'
-                }
-            }
-        )
-    }
-
-    if (error) {
-        throw new Error(`Database error: ${error.message}`)
-    }
-
-    return new Response(
-        JSON.stringify({
-            url: targetUrl,
-            url_hash: urlHash,
-            domain: data.domain || extractDomain(targetUrl),
-            trust_score: data.trust_score, // Legacy compatibility
-            final_trust_score: data.final_trust_score,
-            domain_trust_score: data.domain_trust_score,
-            community_trust_score: data.community_trust_score,
-            content_type: data.content_type,
-            rating_count: data.rating_count,
-            average_rating: data.average_rating,
-            spam_reports_count: data.spam_reports_count,
-            misleading_reports_count: data.misleading_reports_count,
-            scam_reports_count: data.scam_reports_count,
-            last_updated: data.last_updated
-        }),
-        {
-            status: 200,
-            headers: { 
-                ...corsHeaders, 
-                'Content-Type': 'application/json',
-                'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
-                'CDN-Cache-Control': 'public, max-age=300',
-                'Vary': 'Accept-Encoding'
-            }
-        }
-    )
-}
-
-async function handleSubmitRating(req: Request, supabase: any, userId: string) {
-    const body = await req.json()
-    const { url: targetUrl, score, comment, isSpam, isMisleading, isScam } = body
-
-    if (!targetUrl || typeof score !== 'number' || score < 1 || score > 5) {
-        return new Response(
-            JSON.stringify({ error: 'URL and a score between 1-5 are required' }),
-            {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-        )
-    }
-
-    const urlHash = await generateUrlHash(targetUrl)
-    const domain = extractDomain(targetUrl)
-
-    // Check if user has already rated this URL within the last 24 hours
-    const { data: existingRating, error: fetchError } = await supabase
-        .from('ratings')
-        .select('id, created_at, rating, comment, is_spam, is_misleading, is_scam')
-        .eq('url_hash', urlHash)
-        .eq('user_id_hash', userId)
-        .single()
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-        throw new Error(`Database error checking existing rating: ${fetchError.message}`)
-    }
-
-    const currentTime = new Date()
-    let message = ''
-
-    if (existingRating) {
-        const createdAt = new Date(existingRating.created_at)
-        const twentyFourHoursAgo = new Date(currentTime.getTime() - (24 * 60 * 60 * 1000))
-
-        if (createdAt > twentyFourHoursAgo) {
-            // Update existing rating if within 24 hours
-            const { error: updateError } = await supabase
-                .from('ratings')
-                .update({
-                    rating: score,
-                    comment: comment || null,
-                    is_spam: isSpam || false,
-                    is_misleading: isMisleading || false,
-                    is_scam: isScam || false,
-                    processed: false
-                })
-                .eq('id', existingRating.id)
-                .eq('user_id_hash', userId)
-
-            if (updateError) {
-                throw new Error(`Failed to update rating: ${updateError.message}`)
-            }
-            message = 'Rating updated successfully!'
-        } else {
-            // Insert new rating if existing one is older than 24 hours
-            const { error: insertError } = await supabase
-                .from('ratings')
-                .insert({
-                    url_hash: urlHash,
-                    user_id_hash: userId,
-                    rating: score,
-                    comment: comment || null,
-                    is_spam: isSpam || false,
-                    is_misleading: isMisleading || false,
-                    is_scam: isScam || false
-                })
-
-            if (insertError) {
-                throw new Error(`Failed to submit new rating: ${insertError.message}`)
-            }
-            message = 'New rating submitted successfully (previous rating was too old to update)!'
-        }
-    } else {
-        // No existing rating, insert new one
-        const { error: insertError } = await supabase
-            .from('ratings')
-            .insert({
-                url_hash: urlHash,
-                user_id_hash: userId,
-                rating: score,
-                comment: comment || null,
-                is_spam: isSpam || false,
-                is_misleading: isMisleading || false,
-                is_scam: isScam || false
-            })
-
-        if (insertError) {
-            throw new Error(`Failed to submit rating: ${insertError.message}`)
-        }
-        message = 'Rating submitted successfully!'
-    }
-
-    // Update url_stats with domain information for future analysis
-    await supabase
-        .from('url_stats')
-        .upsert({
-            url_hash: urlHash,
-            domain: domain,
-            last_updated: new Date().toISOString()
-        })
-        .select()
-
-    // Trigger domain analysis for new domains (async, don't wait)
-    try {
-        const { data: existingCache } = await supabase
-            .from('domain_cache')
-            .select('domain')
-            .eq('domain', domain)
-            .single()
-
-        if (!existingCache) {
-            // Trigger domain analysis in background
-            fetch(`${supabaseUrl}/functions/v1/domain-analyzer`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseAnonKey}`
-                },
-                body: JSON.stringify({ domain })
-            }).catch(err => console.log('Background domain analysis failed:', err))
-        }
-    } catch (err) {
-        console.log('Domain analysis trigger failed:', err)
-    }
-
-    // Fetch current URL stats after submission
-    const { data: currentUrlStats } = await supabase
-        .from('url_stats')
-        .select(`
-            trust_score, 
-            final_trust_score,
-            domain_trust_score,
-            community_trust_score,
-            content_type,
-            rating_count, 
-            average_rating,
-            spam_reports_count, 
-            misleading_reports_count, 
-            scam_reports_count,
-            domain,
-            last_updated
-        `)
-        .eq('url_hash', urlHash)
-        .single()
-
-    return new Response(
-        JSON.stringify({
-            message,
-            urlStats: currentUrlStats || {
-                trust_score: null,
-                final_trust_score: null,
-                domain_trust_score: null,
-                community_trust_score: null,
-                content_type: 'general',
-                rating_count: 0,
-                average_rating: null,
-                spam_reports_count: 0,
-                misleading_reports_count: 0,
-                scam_reports_count: 0,
-                domain: domain,
-                last_updated: null
-            }
-        }),
-        {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-    )
-}
