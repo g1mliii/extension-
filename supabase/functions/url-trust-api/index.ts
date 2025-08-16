@@ -114,7 +114,7 @@ async function validateAuthentication(req: Request, required: boolean = false) {
 }
 
 // URL Statistics Handler
-async function handleGetUrlStats(req: Request, route: RouteConfig, requestId: string): Promise<Response> {
+async function handleGetUrlStats(req: Request, _route: RouteConfig, _requestId: string): Promise<Response> {
     validateRequestMethod(req.method, ['GET'])
     
     const targetUrl = getQueryParam(req, 'url', true)
@@ -123,8 +123,6 @@ async function handleGetUrlStats(req: Request, route: RouteConfig, requestId: st
     const urlHash = await generateUrlHash(validatedUrl)
     const domain = extractDomain(validatedUrl)
     
-    console.log(`Fetching stats for: ${validatedUrl} -> ${urlHash}`)
-    
     // Get service role client for database access
     const { supabase } = await validateAuthentication(req, false)
     
@@ -132,13 +130,13 @@ async function handleGetUrlStats(req: Request, route: RouteConfig, requestId: st
         // Try URL-specific stats first (with enhanced trust score calculation)
         let stats = await getUrlStats(supabase, urlHash, validatedUrl)
         
-        // Fallback to domain stats if no URL-specific data
-        if (!stats || stats.rating_count === 0) {
+        // Only fallback to domain stats if we have no URL data at all
+        if (!stats) {
             const domainStats = await getDomainStats(supabase, domain)
             stats = mergeDomainStats(stats, domainStats, domain)
         }
         
-        // Apply baseline scoring if no data available
+        // Apply baseline scoring only if no data available at all
         if (!stats) {
             stats = createBaselineStats(validatedUrl, domain)
         }
@@ -157,7 +155,7 @@ async function handleGetUrlStats(req: Request, route: RouteConfig, requestId: st
 }
 
 // Rating Submission Handler
-async function handleSubmitRating(req: Request, route: RouteConfig, requestId: string): Promise<Response> {
+async function handleSubmitRating(req: Request, _route: RouteConfig, requestId: string): Promise<Response> {
     validateRequestMethod(req.method, ['POST'])
     
     // Validate authentication (required for rating submission)
@@ -175,8 +173,6 @@ async function handleSubmitRating(req: Request, route: RouteConfig, requestId: s
     const urlHash = await generateUrlHash(validatedUrl)
     const domain = extractDomain(validatedUrl)
     
-    console.log(`Processing rating submission: ${validatedUrl} -> ${urlHash}`)
-    
     try {
         // Check if user has already rated this URL within the last 24 hours
         let existingRating = null
@@ -193,14 +189,12 @@ async function handleSubmitRating(req: Request, route: RouteConfig, requestId: s
             existingRating = result.data
             fetchError = result.error
         } catch (error) {
-            console.warn('Error checking existing rating:', error.message)
             // Continue without existing rating check if database query fails
             existingRating = null
             fetchError = null
         }
         
         if (fetchError && fetchError.code !== 'PGRST116') {
-            console.warn(`Database error checking existing rating: ${fetchError.message}`)
             // Continue without existing rating check rather than failing
             existingRating = null
         }
@@ -286,7 +280,6 @@ async function handleSubmitRating(req: Request, route: RouteConfig, requestId: s
         }
         
         // Update url_stats with domain information
-        console.log(`Updating url_stats: url_hash=${urlHash}, domain=${domain}`)
         try {
             const { error: upsertError } = await supabase
                 .from('url_stats')
@@ -308,19 +301,14 @@ async function handleSubmitRating(req: Request, route: RouteConfig, requestId: s
             // Don't fail the main operation for database errors
         }
         
-        // Trigger domain analysis if needed (async, don't wait)
+        // Trigger domain analysis if needed (async, don't wait) - only for new domains
         triggerDomainAnalysisIfNeeded(domain).catch(error => {
             console.error('Domain analysis trigger failed:', error)
         })
         
-        // Get current stats to return with response (with enhanced calculation)
-        let currentStats = null
-        try {
-            currentStats = await getUrlStats(supabase, urlHash, validatedUrl)
-        } catch (error) {
-            console.warn('Error fetching current stats after rating submission:', error.message)
-            // Don't fail the rating submission if we can't get current stats
-        }
+        // Skip fetching current stats after rating submission to reduce redundant calls
+        // The frontend can refetch if needed
+        const currentStats = null
         
         return new Response(
             JSON.stringify({
@@ -366,7 +354,6 @@ function extractDomain(url: string): string {
     try {
         const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`)
         const domain = urlObj.hostname.replace(/^www\./, '')
-        console.log(`Domain extracted: ${url} -> ${domain}`)
         return domain
     } catch (error) {
         // Fallback for malformed URLs
@@ -394,8 +381,8 @@ async function getUrlStats(supabase: any, urlHash: string, url?: string) {
             }
         }
         
-        // Try to enhance the stats with domain cache data if available
-        if (url) {
+        // Only enhance stats if we don't already have enhanced data
+        if (url && (!data || data.data_source !== 'enhanced')) {
             try {
                 const { data: enhancedScores, error: enhancedError } = await supabase
                     .rpc('calculate_enhanced_trust_score', {
@@ -406,16 +393,18 @@ async function getUrlStats(supabase: any, urlHash: string, url?: string) {
                 
                 if (!enhancedError && enhancedScores) {
                     if (data) {
-                        // Merge enhanced scores with existing data
-                        data.domain_trust_score = enhancedScores.domain_score
-                        data.community_trust_score = enhancedScores.community_score
-                        data.final_trust_score = enhancedScores.final_score
-                        data.content_type = enhancedScores.content_type
-                        data.data_source = 'enhanced'
-                        console.log(`Enhanced trust scores applied for existing record ${urlHash}`)
+                        // Only update if scores are different to avoid unnecessary processing
+                        if (data.final_trust_score !== enhancedScores.final_score) {
+                            data.domain_trust_score = enhancedScores.domain_score
+                            data.community_trust_score = enhancedScores.community_score
+                            data.final_trust_score = enhancedScores.final_score
+                            data.content_type = enhancedScores.content_type
+                            data.data_source = 'enhanced'
+                            console.log(`Enhanced trust scores applied for existing record ${urlHash}`)
+                        }
                     } else {
                         // Create new data object with enhanced scores
-                        data = {
+                        return {
                             url_hash: urlHash,
                             domain_trust_score: enhancedScores.domain_score,
                             community_trust_score: enhancedScores.community_score,
@@ -430,7 +419,6 @@ async function getUrlStats(supabase: any, urlHash: string, url?: string) {
                             last_updated: null,
                             data_source: 'enhanced'
                         }
-                        console.log(`Enhanced trust scores created for new URL ${urlHash}`)
                     }
                 }
             } catch (enhancedError) {
@@ -473,7 +461,7 @@ async function getDomainStats(supabase: any, domain: string) {
     }
 }
 
-function mergeDomainStats(urlStats: any, domainStats: any, domain: string) {
+function mergeDomainStats(urlStats: any, domainStats: any, _domain: string) {
     if (!domainStats) return urlStats
     
     return {
@@ -611,7 +599,7 @@ async function triggerDomainAnalysisIfNeeded(domain: string) {
         try {
             const domainAnalysis = await performBasicDomainAnalysis(domain)
             
-            const { data: upsertResult, error: upsertError } = await serviceSupabase
+            const { error: upsertError } = await serviceSupabase
                 .rpc('upsert_domain_cache_safe', {
                     p_domain: domain,
                     p_domain_age_days: domainAnalysis.domainAge,
@@ -664,7 +652,7 @@ async function performBasicDomainAnalysis(domain: string) {
             result.httpStatus = response.status
             result.sslValid = response.url.startsWith('https://')
             
-        } catch (error) {
+        } catch (fetchError) {
             clearTimeout(timeoutId)
             // Keep defaults on error
         }
@@ -697,7 +685,7 @@ async function performBasicDomainAnalysis(domain: string) {
 const handlers = {
     handleGetUrlStats,
     handleSubmitRating,
-    handleCors: (req: Request) => new Response('ok', { headers: corsHeaders })
+    handleCors: (_req: Request) => new Response('ok', { headers: corsHeaders })
 }
 
 // Create and export the router
