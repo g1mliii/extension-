@@ -121,24 +121,24 @@ async function handleGetUrlStats(req: Request, _route: RouteConfig, _requestId: 
     const validatedUrl = validateUrlParameter(targetUrl)
 
     const urlHash = await generateUrlHash(validatedUrl)
-    const domain = extractDomain(validatedUrl)
 
     // Get service role client for database access
     const { supabase } = await validateAuthentication(req, false)
 
     try {
-        // Try URL-specific stats first (with enhanced trust score calculation)
+        // Try URL-specific stats first
         let stats = await getUrlStats(supabase, urlHash, validatedUrl)
 
-        // Only fallback to domain stats if we have no URL data at all
+        // Only extract domain if we don't have stats (avoid redundant extraction)
         if (!stats) {
+            const domain = extractDomain(validatedUrl)
             const domainStats = await getDomainStats(supabase, domain)
             stats = mergeDomainStats(stats, domainStats, domain)
-        }
-
-        // Apply baseline scoring only if no data available at all
-        if (!stats) {
-            stats = createBaselineStats(validatedUrl, domain)
+            
+            // Apply baseline scoring only if no data available at all
+            if (!stats) {
+                stats = createBaselineStats(validatedUrl, domain)
+            }
         }
 
         return new Response(
@@ -360,7 +360,6 @@ function extractDomain(url: string): string {
     } catch (error) {
         // Fallback for malformed URLs
         const fallbackDomain = url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].split('?')[0]
-        console.log(`Domain extraction fallback: ${url} -> ${fallbackDomain}`)
         return fallbackDomain
     }
 }
