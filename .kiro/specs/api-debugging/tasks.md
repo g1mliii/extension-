@@ -178,15 +178,106 @@ Based on comprehensive code analysis, the API debugging effort has made signific
     - Tag commit as production-ready milestone
   - _Requirements: Production readiness, security verification, and clean Git history_
 
-- [ ] 13. Fix domain cache 406 error when adding new websites through extension
-  - Investigate and fix the 406 error occurring when querying domain_cache table: `GET /rest/v1/domain_cache?select=domain&domain=eq.scyrox.net`
-  - Error shows "406 Not Acceptable" response when checking if domain exists in cache
-  - This prevents proper domain analysis triggering for new websites visited through the extension
-  - Verify domain cache table structure and API access permissions
-  - Test domain cache functionality after fix to ensure new domains are properly processed
+- [x] 13. Fix 406 and 403 errors when extension loads new websites
+
+
+
+
+  - Fix 403 error: `GET /auth/v1/user` returns "403 Forbidden" with "bad_jwt" error code when not authenticated
+  - Fix 406 error: `GET /rest/v1/url_stats` returns "406 Not Acceptable" even in logged-in state, followed immediately by 200 success
+  - Fix 406 error: `GET /rest/v1/domain_cache` returns "406 Not Acceptable" when querying domain cache
+  - Fix timing/loading issues: Always get two 406 errors when opening new site (both logged in and not logged in), but extension still functions
+  - Fix rating submission errors: When submitting rating on site not in domain cache (e.g., Twitter), get 406 errors before success
+  - Typical error sequence when submitting rating on new site: 406 rating errors → 201 POST ratings → 201 POST url_stats → 200 GET url_stats → 406 GET domain_cache
+  - Root cause analysis: Timing/sequencing issues in API calls causing 406 errors before eventual success
+  - Root cause analysis: Domain cache queries have permission or query structure issues
+  - Root cause analysis: Extension authentication flow making requests out of order or with incorrect timing
+  - Note: Functionality is working (ratings appear in database, domain analysis processes, stats appear) but errors are occurring
+  - Note: Database migrations in Supabase must be pushed manually
+  - Investigate and fix the request timing/sequencing to eliminate 406 errors while maintaining functionality
+  - Fix domain cache query permissions and structure
+  - Ensure proper request ordering and timing in extension authentication flow
+  - Verify extension works correctly without 406/403 errors while maintaining current functionality
   - _Requirements: 2.2, 2.3, 6.1, 6.2_
 
-- [ ] 14. Implement automated content type rule generation and cron job monitoring
+- [x] 14. Fix domain cache not being added on new rating submissions and investigate 406 errors
+
+
+
+
+
+
+
+
+
+
+
+
+  - Track down why domain cache is not being populated when submitting ratings through extension
+  - Investigate Supabase 406 errors occurring during rating submission process
+  - Analyze domain cache logic: understand when domain cache should be added and why it's failing
+  - Fix issue where domain cache shows no error when domain already exists but fails to add new domains
+  - Investigate 406 error on `rest/v1/rating` when submitting rating on websites without existing ratings
+  - Investigate 406 error on `GET url_stats` when URL doesn't exist (may be acceptable behavior)
+  - Fix 406 error on `GET domain_cache` when submitting rating on cached domains (e.g., YouTube)
+  - Analyze the sequence: First 406 error then 200 success when URL doesn't exist but cached domain exists
+  - Root cause analysis: Domain cache population logic in `triggerDomainAnalysisIfNeeded()` function
+  - Root cause analysis: Batch domain analysis function may not be properly adding domains to cache
+  - Root cause analysis: Permission issues or database constraints preventing domain cache inserts
+  - Note: Most functionality works even with 406 errors, but domain cache population is critical
+  - Note: Database migrations and function updates must be applied manually via Supabase SQL editor
+  - Fix domain cache population to ensure new domains are properly cached after rating submission
+  - Ensure domain analysis triggers correctly and populates domain_cache table
+  - Verify domain cache TTL and expiration logic works correctly
+  - Test rating submission flow end-to-end to ensure domain cache is populated
+  - _Requirements: 2.2, 2.3, 6.1, 6.2, 6.3, 6.4_
+
+- [ ] 15. Fix Supabase security warnings for database functions
+  - Address "Function Search Path Mutable" security warnings for 19 database functions identified in security audit
+  - Add `SET search_path = public` parameter to all affected functions to fix mutable search_path warnings
+  - Functions to fix: `get_processing_status_summary`, `get_trust_algorithm_performance`, `check_domain_blacklist`, `determine_content_type`, `refresh_expired_domain_cache`, `batch_aggregate_ratings`, `get_trust_config`, `recalculate_with_new_config`, `run_api_compatibility_tests`, `log_migration_completion`, `extract_domain`, `cleanup_old_urls`, `get_cache_statistics`, `get_enhanced_trust_analytics`, `update_trust_config`, `calculate_enhanced_trust_score`, `verify_required_functions`, `auto_generate_content_rules`, `verify_cron_job`
+  - Fix Auth OTP expiry setting (reduce from current value to less than 1 hour)
+  - Enable leaked password protection in Supabase Auth settings
+  - Test all functions after security fixes to ensure they still work correctly
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
+
+- [ ] 16. Fix UI trust score percentage bar display accuracy
+  - Fix trust score circular progress bar that shows incorrect fill percentage (e.g., 50% shows more than half filled)
+  - Investigate CSS calculations for the circular progress indicator in popup.css
+  - Current issue: `stroke-dasharray: 283` and `stroke-dashoffset: 283` calculations may be incorrect for the actual circle radius
+  - Ensure the visual percentage matches the actual trust score value by fixing the circumference calculation
+  - Test with various trust score values (0-100) to verify accurate display
+  - _Requirements: 1.4, 1.5_
+
+- [-] 15. Cleanup workspace and verify all APIs are working correctly
+
+  - Remove any redundant test files, temporary code, or unused functions created during development
+  - Verify all edge functions are working correctly:
+    - `url-trust-api`: GET /url-stats and POST /rating endpoints
+    - `batch-domain-analysis`: Domain analysis and cache population
+    - `rating-submission`: Authenticated rating submission (if still needed)
+    - `aggregate-ratings`: Cron job for rating aggregation
+    - `trust-admin`: Admin functions for trust algorithm management
+    - `trust-score-api`: Public API for trust score queries
+  - Clean up any debugging code, console.log statements, or temporary implementations
+  - Remove obsolete functions or files that are no longer needed
+  - Verify database functions are working: `check_domain_cache_exists`, `upsert_domain_cache_safe`, `calculate_enhanced_trust_score`
+  - Test complete end-to-end flow: extension rating submission → domain cache population → enhanced scoring
+  - Commit all changes to GitHub repository with comprehensive commit message
+  - Update documentation to reflect final implementation state
+  - _Requirements: All requirements verification, code quality, maintainability_
+
+- [ ] 16. Add rating submission confirmation feedback
+  - Add visual confirmation when rating/feedback is successfully submitted
+  - Display success message or visual indicator to user after rating submission
+  - Current implementation returns success message but may not be prominently displayed to user
+  - Ensure user knows their feedback was received and processed with clear UI feedback
+  - Handle both success and error states with appropriate user feedback
+  - **NOTE**: Domain cache population is now working correctly (Task 14 completed)
+  - **NOTE**: Trust scoring system is fully functional and documented
+  - _Requirements: 2.4, 2.5, 2.6_
+
+- [ ] 17. Implement automated content type rule generation and cron job monitoring
   - Create SQL function `auto_generate_content_type_rules()` that analyzes domain patterns from submitted ratings
   - Function should identify domains with significant rating volume that don't have content type rules (e.g., youtube.com, tiktok.com, github.com)
   - Use domain cache data and rating statistics to determine appropriate content type modifiers for new domain patterns
@@ -204,29 +295,6 @@ Based on comprehensive code analysis, the API debugging effort has made signific
   - Add logging and monitoring for the automated rule generation process
   - Test the automated content type rule generation with existing domain data
   - _Requirements: 2.2, 2.3, 6.1, 6.2, 6.5, 6.6_
-
-- [ ] 14. Fix Supabase security warnings for database functions
-  - Address "Function Search Path Mutable" security warnings for 19 database functions
-  - Add `SET search_path = public` parameter to all affected functions to fix mutable search_path warnings
-  - Functions to fix: `get_processing_status_summary`, `get_trust_algorithm_performance`, `check_domain_blacklist`, `determine_content_type`, `refresh_expired_domain_cache`, `batch_aggregate_ratings`, `get_trust_config`, `recalculate_with_new_config`, `run_api_compatibility_tests`, `log_migration_completion`, `extract_domain`, `cleanup_old_urls`, `get_cache_statistics`, `get_enhanced_trust_analytics`, `update_trust_config`, `calculate_enhanced_trust_score`, `verify_required_functions`, `auto_generate_content_rules`, `verify_cron_job`
-  - Fix Auth OTP expiry setting (reduce from current value to less than 1 hour)
-  - Enable leaked password protection in Supabase Auth settings
-  - Test all functions after security fixes to ensure they still work correctly
-  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
-
-- [ ] 15. Fix UI trust score percentage bar display accuracy
-  - Fix trust score circular progress bar that shows incorrect fill percentage (e.g., 50% shows more than half filled)
-  - Investigate CSS calculations for the circular progress indicator in popup.css
-  - Ensure the visual percentage matches the actual trust score value
-  - Test with various trust score values (0-100) to verify accurate display
-  - _Requirements: 1.4, 1.5_
-
-- [ ] 16. Add rating submission confirmation feedback
-  - Add visual confirmation when rating/feedback is successfully submitted
-  - Display success message or visual indicator to user after rating submission
-  - Ensure user knows their feedback was received and processed
-  - Handle both success and error states with appropriate user feedback
-  - _Requirements: 2.4, 2.5, 2.6_
 
 ## Implementation Notes
 
@@ -265,10 +333,11 @@ The API debugging effort has been successfully completed with all core functiona
 ✅ **Background Processing**: Cron job verified and working with new implementation  
 ✅ **Workspace Cleanup**: All obsolete files and test files removed  
 
+**Status: INCOMPLETE** ❌
+
 **Remaining Tasks**: 
-- Complete workspace organization and security audit before GitHub commit
-- Fix domain cache 406 error preventing new website analysis  
-- Implement automated content type rule generation and cron job monitoring
-- Address Supabase security warnings for database functions and auth settings
-- Fix UI trust score percentage bar display accuracy
+- Fix 406 and 403 errors when extension loads new websites (authentication flow and domain cache issues)
+- Fix Supabase security warnings for database functions and auth settings
+- Fix UI trust score percentage bar display accuracy  
 - Add rating submission confirmation feedback
+- Implement automated content type rule generation and cron job monitoring

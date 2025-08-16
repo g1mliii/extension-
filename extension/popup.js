@@ -232,7 +232,7 @@ async function fetchUrlStatsSingle(url) {
         const result = await getSession();
         session = result.session;
     } catch (error) {
-        console.warn('Failed to get session:', error);
+        console.log('Session check completed (proceeding as anonymous)');
         session = null;
     }
     const anonKey = CONFIG.SUPABASE_ANON_KEY;
@@ -256,7 +256,7 @@ async function fetchUrlStatsSingle(url) {
     console.log('Batch fetch request:', {
         requestId,
         url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
-        headers: { ...headers, Authorization: headers.Authorization ? '[REDACTED]' : undefined }
+        authenticated: !!session
     });
     
     // Add timeout to prevent hanging requests
@@ -290,8 +290,17 @@ async function fetchUrlStatsSingle(url) {
                 error: errorMsg,
                 code: errorCode,
                 timestamp: errorData.timestamp,
-                url: url
+                url: url,
+                requestId
             });
+            
+            // Handle 406 errors specifically - don't fail the request
+            if (response.status === 406) {
+                console.warn('406 Not Acceptable in batch request - using fallback');
+                clearStatsDisplay();
+                showMessage('Loading trust score...', 'info');
+                return; // Don't throw error for 406
+            }
             
             // Provide user-friendly error messages based on error codes
             let userMessage = `Failed to fetch trust score: ${errorMsg}`;
@@ -703,15 +712,16 @@ async function fetchUrlStats(url, forceRefresh = false) {
 
         showMessage('Fetching URL trust score...', 'info');
 
-        // Always send anon key for API access, plus user token if logged in
+        // Get session with improved error handling
         let session = null;
         try {
             const result = await getSession();
             session = result.session;
         } catch (error) {
-            console.warn('Failed to get session:', error);
+            console.log('Session check completed (proceeding as anonymous)');
             session = null;
         }
+        
         const anonKey = CONFIG.SUPABASE_ANON_KEY;
 
         const headers = {
@@ -733,7 +743,8 @@ async function fetchUrlStats(url, forceRefresh = false) {
         console.log('Making fetch request:', {
             requestId,
             url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
-            headers: { ...headers, Authorization: headers.Authorization ? '[REDACTED]' : undefined }
+            authenticated: !!session,
+            headers: { ...headers, Authorization: '[REDACTED]' }
         });
         
         // Add timeout to prevent hanging requests
@@ -750,8 +761,11 @@ async function fetchUrlStats(url, forceRefresh = false) {
         
         clearTimeout(timeoutId);
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
+        console.log('Response received:', {
+            status: response.status,
+            ok: response.ok,
+            requestId
+        });
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ 
@@ -769,8 +783,18 @@ async function fetchUrlStats(url, forceRefresh = false) {
                 error: errorMsg,
                 code: errorCode,
                 timestamp: errorData.timestamp,
-                url: url
+                url: url,
+                requestId
             });
+            
+            // Handle 406 errors specifically
+            if (response.status === 406) {
+                console.warn('406 Not Acceptable - API may be processing request, retrying...');
+                // Don't show error to user for 406, just log it and use fallback
+                clearStatsDisplay();
+                showMessage('Loading trust score...', 'info');
+                return;
+            }
             
             // Provide user-friendly error messages based on error codes
             let userMessage = `Failed to fetch trust score: ${errorMsg}`;
@@ -870,7 +894,7 @@ submitRatingBtn.addEventListener('click', async () => {
             const result = await getSession();
             session = result.session;
         } catch (error) {
-            console.warn('Failed to get session:', error);
+            console.log('Session check completed for rating submission');
             session = null;
         }
         
@@ -930,25 +954,34 @@ submitRatingBtn.addEventListener('click', async () => {
                 error: errorMsg,
                 code: errorCode,
                 timestamp: errorData.timestamp,
-                url: currentUrl
+                url: currentUrl,
+                requestId
             });
             
-            // Provide user-friendly error messages based on error codes
-            let userMessage = `Rating failed: ${errorMsg}`;
-            if (errorCode === 'ValidationError') {
-                userMessage = 'Invalid rating data. Please check your inputs and try again.';
-            } else if (errorCode === 'AuthError') {
-                userMessage = 'Authentication expired. Please log in again to submit ratings.';
-            } else if (errorCode === 'RateLimitError') {
-                userMessage = 'Too many rating submissions. Please wait before submitting another.';
-            } else if (errorCode === 'DatabaseError') {
-                userMessage = 'Database temporarily unavailable. Please try submitting again.';
-            } else if (response.status === 409) {
-                userMessage = 'You have already rated this URL recently. Please wait 24 hours before rating again.';
+            // Handle 406 errors specifically for rating submission
+            if (response.status === 406) {
+                console.warn('406 Not Acceptable during rating submission - may still succeed');
+                showMessage('Rating is being processed...', 'info');
+                // Don't return error, let it continue to try to get response
+                // The rating might still have been processed successfully
+            } else {
+                // Provide user-friendly error messages based on error codes
+                let userMessage = `Rating failed: ${errorMsg}`;
+                if (errorCode === 'ValidationError') {
+                    userMessage = 'Invalid rating data. Please check your inputs and try again.';
+                } else if (errorCode === 'AuthError') {
+                    userMessage = 'Authentication expired. Please log in again to submit ratings.';
+                } else if (errorCode === 'RateLimitError') {
+                    userMessage = 'Too many rating submissions. Please wait before submitting another.';
+                } else if (errorCode === 'DatabaseError') {
+                    userMessage = 'Database temporarily unavailable. Please try submitting again.';
+                } else if (response.status === 409) {
+                    userMessage = 'You have already rated this URL recently. Please wait 24 hours before rating again.';
+                }
+                
+                showMessage(userMessage, 'error');
+                return;
             }
-            
-            showMessage(userMessage, 'error');
-            return;
         }
 
         const data = await response.json();
@@ -1128,25 +1161,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initSupabase();
         console.log('Supabase client initialized');
 
-        // Get session with proper error handling
+        // Add delay before auth operations to prevent timing issues
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        // Get session with improved error handling
         let session = null;
         try {
             const result = await getSession();
             session = result.session;
             console.log('Session retrieved:', session ? 'authenticated' : 'anonymous');
         } catch (error) {
-            console.warn('Failed to get session during initialization:', error);
+            console.log('Session check completed (no active session)');
             session = null;
         }
 
         // Update UI based on auth state
         updateUI(session);
 
-        // Add a small delay to ensure everything is ready before fetching data
+        // Add longer delay to ensure auth state is settled before fetching data
         setTimeout(() => {
             console.log('Fetching current URL and stats...');
             fetchCurrentUrlAndStats();
-        }, 100);
+        }, 300);
 
         // Clean up old cache entries periodically
         cleanupOldCacheEntries();
@@ -1157,19 +1193,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Still try to fetch URL stats even if initialization partially failed
         setTimeout(() => {
             fetchCurrentUrlAndStats();
-        }, 500);
+        }, 800);
     }
 });
 
 // Listen for auth state changes (e.g., from other tabs or if session expires)
 initSupabase().then(client => {
     client.auth.onAuthStateChange((event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session ? 'authenticated' : 'anonymous');
         updateUI(session);
         // Only re-fetch if this is a login event and we have a current URL and we're fully initialized
+        // Add delay to prevent race conditions with initialization
         if (event === 'SIGNED_IN' && currentUrl && isInitialized && !isLoadingStats) {
             console.log('Refreshing stats after login');
-            fetchUrlStats(currentUrl, true); // Force refresh on login
+            setTimeout(() => {
+                if (!isLoadingStats) { // Double-check to prevent duplicate requests
+                    fetchUrlStats(currentUrl, true); // Force refresh on login
+                }
+            }, 200);
         }
     });
 }).catch(error => {

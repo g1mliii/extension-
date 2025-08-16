@@ -41,7 +41,6 @@ supabase functions deploy trust-admin
 supabase functions deploy trust-score-api
 supabase functions deploy batch-domain-analysis
 supabase functions deploy aggregate-ratings
-supabase functions deploy rating-submission
 
 # Generate types
 supabase gen types typescript --local > types/supabase.ts

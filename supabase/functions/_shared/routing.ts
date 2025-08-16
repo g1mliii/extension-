@@ -290,11 +290,23 @@ export function validateUrlParameter(url: string | null): string {
         throw new ValidationError('URL parameter must be a non-empty string')
     }
     
-    // Basic URL validation
+    // Basic URL validation - be more strict about URL format
     try {
-        new URL(url.startsWith('http') ? url : `https://${url}`)
+        const urlToTest = url.startsWith('http') ? url : `https://${url}`
+        const parsedUrl = new URL(urlToTest)
+        
+        // Additional validation - must have a valid hostname
+        if (!parsedUrl.hostname || parsedUrl.hostname.length < 3) {
+            throw new Error('Invalid hostname')
+        }
+        
+        // Must contain at least one dot (for domain)
+        if (!parsedUrl.hostname.includes('.')) {
+            throw new Error('Invalid domain format')
+        }
+        
     } catch (error) {
-        throw new ValidationError('URL parameter must be a valid URL')
+        throw new ValidationError(`URL parameter must be a valid URL: ${error.message}`)
     }
     
     return url.trim()

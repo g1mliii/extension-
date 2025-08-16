@@ -36,7 +36,6 @@
 supabase/
 ├── functions/                    # Edge functions
 │   ├── url-trust-api/           # 🎯 MAIN UNIFIED API - handles all URL stats and rating operations
-│   ├── rating-submission/       # Rating submission with authentication and domain analysis triggering
 │   ├── aggregate-ratings/       # Enhanced statistics aggregation (cron job)
 │   ├── trust-admin/             # Admin functions for trust algorithm management
 │   ├── trust-score-api/         # Public API for trust score queries
@@ -53,9 +52,11 @@ supabase/
     └── 20250816000003_database_compatibility_final.sql
 ```
 
-## Obsolete Functions (To Be Removed)
-- `rating-api-test/` - Replaced by `url-trust-api`
-- `test-routing-fix/` - Replaced by `url-trust-api`
+## Removed Functions (Cleanup Completed)
+- `rating-api/` - ✅ Removed (replaced by `url-trust-api`)
+- `rating-submission/` - ✅ Removed (redundant with `url-trust-api`)
+- `rating-api-test/` - ✅ Removed (replaced by `url-trust-api`)
+- `test-routing-fix/` - ✅ Removed (replaced by `url-trust-api`)
 
 ## File Naming Conventions
 

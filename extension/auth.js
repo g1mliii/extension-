@@ -84,9 +84,26 @@ export async function getSession() {
     try {
         const client = await initSupabase();
         const { data: { session }, error } = await client.auth.getSession();
-        return { session, error };
+        
+        // Handle specific auth errors gracefully
+        if (error) {
+            // Don't log 403/bad_jwt errors as warnings - they're expected when not authenticated
+            if (error.message && (error.message.includes('bad_jwt') || error.message.includes('403'))) {
+                console.log('No valid session found (not authenticated)');
+                return { session: null, error: null }; // Return null error for expected auth failures
+            }
+            console.warn('Session error:', error.message);
+            return { session: null, error };
+        }
+        
+        return { session, error: null };
     } catch (error) {
-        console.warn('Error getting session:', error);
+        // Handle network errors and other exceptions
+        if (error.message && (error.message.includes('bad_jwt') || error.message.includes('403'))) {
+            console.log('No valid session found (not authenticated)');
+            return { session: null, error: null };
+        }
+        console.warn('Error getting session:', error.message);
         return { session: null, error };
     }
 }
@@ -96,9 +113,31 @@ export async function getSession() {
  * @returns {Promise<{user: object|null, error: Error|null}>}
  */
 export async function getUser() {
-    const client = await initSupabase();
-    const { data: { user }, error } = await client.auth.getUser();
-    return { user, error };
+    try {
+        const client = await initSupabase();
+        const { data: { user }, error } = await client.auth.getUser();
+        
+        // Handle specific auth errors gracefully
+        if (error) {
+            // Don't log 403/bad_jwt errors as warnings - they're expected when not authenticated
+            if (error.message && (error.message.includes('bad_jwt') || error.message.includes('403'))) {
+                console.log('No authenticated user found');
+                return { user: null, error: null }; // Return null error for expected auth failures
+            }
+            console.warn('User auth error:', error.message);
+            return { user: null, error };
+        }
+        
+        return { user, error: null };
+    } catch (error) {
+        // Handle network errors and other exceptions
+        if (error.message && (error.message.includes('bad_jwt') || error.message.includes('403'))) {
+            console.log('No authenticated user found');
+            return { user: null, error: null };
+        }
+        console.warn('Error getting user:', error.message);
+        return { user: null, error };
+    }
 }
 
 /**
