@@ -67,17 +67,20 @@ This feature focuses on enhancing the user interface of the URL Rating Extension
 4. WHEN a website has multiple quality issues THEN the system SHALL display appropriate warning indicators
 5. WHEN thresholds are calculated THEN they SHALL be based on percentage of total ratings (e.g., >20% spam reports)
 
-### Requirement 6: Google Ads API Integration
+### Requirement 6: Multi-Provider Ad Integration (OCode Fuel, AdMaven, Value Impressions)
 
-**User Story:** As a product owner, I want to integrate Google Ads API for monetization, so that the extension can generate revenue through targeted advertising.
+**User Story:** As a product owner, I want to integrate OCode Fuel banner ads, AdMaven outstream video ads, and Value Impressions for monetization, so that the extension can generate maximum revenue through diverse advertising channels.
 
 #### Acceptance Criteria
 
-1. WHEN the Google Ads API is integrated THEN the system SHALL display relevant ads based on website content or security context
-2. WHEN ads are displayed THEN they SHALL be clearly marked as advertisements
-3. WHEN ads are displayed THEN they SHALL not interfere with core extension functionality
-4. WHEN the API is called THEN it SHALL respect rate limits and handle errors gracefully
-5. WHEN ads are clicked THEN the system SHALL track engagement metrics for optimization
+1. WHEN OCode Fuel banner ads are integrated THEN the system SHALL display banner advertisements in designated areas of both compact and full extension popups
+2. WHEN AdMaven outstream video ads are integrated THEN the system SHALL display unobtrusive video advertisements that don't interfere with user experience
+3. WHEN Value Impressions ads are integrated THEN the system SHALL display additional ad units to maximize revenue potential
+4. WHEN ads are displayed THEN they SHALL be clearly marked as advertisements and comply with advertising standards
+5. WHEN ads are displayed THEN they SHALL not interfere with core extension functionality or trust score display
+6. WHEN ad APIs are called THEN the system SHALL respect rate limits and handle errors gracefully
+7. WHEN ads are clicked THEN the system SHALL track engagement metrics and impressions for optimization across all three providers
+8. WHEN video ads are displayed THEN they SHALL be outstream format to ensure they are unobtrusive and user-friendly
 
 ### Requirement 7: Affiliate Link System
 
@@ -91,18 +94,20 @@ This feature focuses on enhancing the user interface of the URL Rating Extension
 4. WHEN the affiliate system is active THEN it SHALL integrate seamlessly with the existing UI design
 5. WHEN affiliate revenue is generated THEN the system SHALL provide analytics and tracking capabilities
 
-### Requirement 8: Website Overlay Trust Score Display
+### Requirement 8: Auto-Opening Compact Extension Popup on Website Load
 
-**User Story:** As a user, I want to see a small trust score overlay when I visit websites, so that I can quickly assess trustworthiness without opening the extension popup.
+**User Story:** As a user, I want the extension popup to automatically open in a compact version when I visit new websites, so that I can quickly see the trust rating and ads without having to manually click the extension icon.
 
 #### Acceptance Criteria
 
-1. WHEN a user loads a website THEN the system SHALL display a small circular trust score overlay on the page
-2. WHEN the overlay is displayed THEN it SHALL use iOS 26 liquid glass glassmorphism with backdrop-filter for transparency
-3. WHEN the overlay is displayed THEN it SHALL be positioned unobtrusively (top-right corner) and be dismissible
-4. WHEN the user clicks the close button THEN the overlay SHALL disappear with a smooth animation
-5. WHEN the overlay is clicked THEN it SHALL open the full extension popup for detailed information
-6. WHEN the overlay is displayed THEN it SHALL show the circular trust score matching the extension's design theme
+1. WHEN a user loads a new website THEN the existing extension popup SHALL automatically open in a smaller, compact mode
+2. WHEN the compact popup is displayed THEN it SHALL show only the trust score/rating for the current URL and banner advertisement space
+3. WHEN the compact popup is displayed THEN it SHALL be clickable to expand to the full extension with all functionality
+4. WHEN the compact popup is displayed THEN it SHALL use iOS 26 liquid glass glassmorphism design matching the main extension
+5. WHEN the user clicks the compact popup THEN it SHALL smoothly expand to full size with all features available
+6. WHEN the compact popup is displayed THEN it SHALL comply with Google's extension policies by being a proper extension popup, not a website overlay
+7. WHEN the compact popup shows ads THEN they SHALL be properly integrated within the extension popup interface
+8. WHEN the compact popup opens THEN it SHALL be the same extension popup just in a smaller, focused view
 
 ### Requirement 9: Enhanced UI Responsiveness
 

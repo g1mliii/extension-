@@ -12,11 +12,11 @@ The UI enhancement follows a modular component-based architecture with iOS 26 li
 
 ```
 UI Enhancement Architecture
-├── Website Overlay System (Content Script)
-│   ├── Circular Trust Score Overlay
+├── Compact Extension Popup System
+│   ├── Auto-Opening Compact Popup
+│   ├── Expandable Interface Design
 │   ├── iOS 26 Liquid Glass Styling
-│   ├── Backdrop Filter Effects
-│   └── Dismissible Interface
+│   └── Google Policy Compliant Implementation
 ├── Visual Feedback System
 │   ├── Button State Manager (Pastel Blue Theme)
 │   ├── Loading Indicators (Liquid Glass)
@@ -36,7 +36,9 @@ UI Enhancement Architecture
 │   ├── Threshold Calculator
 │   └── Dynamic Content Filters
 └── Monetization Components
-    ├── Google Ads Integration (Themed)
+    ├── OCode Fuel Banner Integration
+    ├── AdMaven Outstream Video Ads
+    ├── Value Impressions Ad Integration
     ├── Affiliate Link Manager (Liquid Glass)
     └── Revenue Analytics
 ```
@@ -57,8 +59,14 @@ const UIState = {
     ratingPreview: null,
     
     // Monetization states
-    adsLoaded: false,
+    ocodeFuelAdsLoaded: false,
+    admavenVideoAdsLoaded: false,
+    valueImpressionsAdsLoaded: false,
     affiliateTracking: new Map(),
+    
+    // Popup states
+    isCompactMode: true,
+    isExpanded: false,
     
     // User interaction states
     tooltipVisible: false,
@@ -68,17 +76,18 @@ const UIState = {
 
 ## Components and Interfaces
 
-### 1. Website Overlay System (Content Script)
+### 1. Compact Extension Popup System
 
-#### Circular Trust Score Overlay
-The overlay system provides an unobtrusive trust score display directly on websites using iOS 26 liquid glass design:
+#### Auto-Opening Compact Popup
+The compact popup system automatically opens a smaller version of the extension when users visit new websites, providing trust scores and ad space while complying with Google's extension policies:
 
 ```javascript
-class TrustScoreOverlay {
+class CompactPopupManager {
     constructor() {
-        this.overlay = null;
-        this.isVisible = false;
+        this.isCompactMode = true;
+        this.isExpanded = false;
         this.currentUrl = window.location.href;
+        this.popupContainer = null;
         this.theme = {
             // iOS 26 Liquid Glass Colors (matching extension)
             primaryGlass: 'rgba(30, 41, 59, 0.8)',
@@ -91,13 +100,34 @@ class TrustScoreOverlay {
     }
     
     async initialize() {
-        // Only show on main pages, not iframes
-        if (window !== window.top) return;
+        // Detect new website navigation
+        if (this.isNewWebsite()) {
+            // Auto-open compact popup
+            await this.openCompactPopup();
+        }
+    }
+    
+    isNewWebsite() {
+        const currentDomain = new URL(window.location.href).hostname;
+        const lastDomain = localStorage.getItem('lastVisitedDomain');
         
-        // Fetch trust score for current URL
-        const trustScore = await this.fetchTrustScore();
+        if (currentDomain !== lastDomain) {
+            localStorage.setItem('lastVisitedDomain', currentDomain);
+            return true;
+        }
+        return false;
+    }
+    
+    async openCompactPopup() {
+        // Use Chrome extension API to open popup in compact mode
+        chrome.action.openPopup();
         
-        // Create and show overlay
+        // Send message to popup to initialize in compact mode
+        chrome.runtime.sendMessage({
+            action: 'initializeCompactMode',
+            url: this.currentUrl
+        });
+    }
         this.createOverlay(trustScore);
         this.showOverlay();
         
@@ -1045,45 +1075,100 @@ class WarningIndicatorSystem {
 }
 ```
 
-### 5. Google Ads Integration
+### 5. Multi-Provider Ad Integration (OCode Fuel, AdMaven, Value Impressions)
 
-#### Ads Manager Component
+#### Monetization Manager Component
 ```javascript
-class GoogleAdsManager {
+class MonetizationManager {
     constructor() {
-        this.adUnits = new Map();
-        this.isInitialized = false;
+        this.ocodeFuelAds = new Map();
+        this.admavenVideoAds = new Map();
+        this.valueImpressionsAds = new Map();
+        this.isOCodeInitialized = false;
+        this.isAdMavenInitialized = false;
+        this.isValueImpressionsInitialized = false;
         this.config = {
-            publisherId: 'ca-pub-XXXXXXXXXX', // To be configured
-            adSlots: {
-                header: 'XXXXXXXXXX',
-                sidebar: 'XXXXXXXXXX',
-                footer: 'XXXXXXXXXX'
+            ocodeFuel: {
+                publisherId: 'OCODE_PUBLISHER_ID', // To be configured
+                bannerSlots: {
+                    header: 'HEADER_BANNER_ID',
+                    compact: 'COMPACT_BANNER_ID',
+                    sidebar: 'SIDEBAR_BANNER_ID'
+                }
+            },
+            admaven: {
+                publisherId: 'ADMAVEN_PUBLISHER_ID', // To be configured
+                videoSlots: {
+                    outstream: 'OUTSTREAM_VIDEO_ID',
+                    compact: 'COMPACT_VIDEO_ID'
+                }
+            },
+            valueImpressions: {
+                publisherId: 'VALUE_IMPRESSIONS_PUBLISHER_ID', // To be configured
+                adSlots: {
+                    banner: 'VI_BANNER_ID',
+                    compact: 'VI_COMPACT_ID',
+                    native: 'VI_NATIVE_ID'
+                }
             }
         };
     }
     
     async initialize() {
-        if (this.isInitialized) return;
-        
         try {
-            // Load Google AdSense script
-            await this.loadAdSenseScript();
+            // Initialize OCode Fuel banner ads
+            await this.initializeOCodeFuel();
             
-            // Initialize ad units
-            this.initializeAdUnits();
+            // Initialize AdMaven outstream video ads
+            await this.initializeAdMaven();
             
-            this.isInitialized = true;
-            console.log('Google Ads initialized successfully');
+            // Initialize Value Impressions ads
+            await this.initializeValueImpressions();
+            
+            console.log('All monetization systems initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize Google Ads:', error);
+            console.error('Failed to initialize monetization:', error);
         }
     }
     
-    loadAdSenseScript() {
+    async initializeOCodeFuel() {
+        if (this.isOCodeInitialized) return;
+        
+        try {
+            // Load OCode Fuel script
+            await this.loadOCodeScript();
+            
+            // Initialize banner ad units
+            this.initializeOCodeBanners();
+            
+            this.isOCodeInitialized = true;
+            console.log('OCode Fuel banners initialized');
+        } catch (error) {
+            console.error('Failed to initialize OCode Fuel:', error);
+        }
+    }
+    
+    async initializeAdMaven() {
+        if (this.isAdMavenInitialized) return;
+        
+        try {
+            // Load AdMaven script
+            await this.loadAdMavenScript();
+            
+            // Initialize outstream video ad units
+            this.initializeAdMavenVideos();
+            
+            this.isAdMavenInitialized = true;
+            console.log('AdMaven outstream videos initialized');
+        } catch (error) {
+            console.error('Failed to initialize AdMaven:', error);
+        }
+    }
+    
+    loadOCodeScript() {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${this.config.publisherId}`;
+            script.src = `https://ocode.fuel/ads.js?publisher=${this.config.ocodeFuel.publisherId}`;
             script.async = true;
             script.crossOrigin = 'anonymous';
             
@@ -1094,27 +1179,160 @@ class GoogleAdsManager {
         });
     }
     
-    createAdUnit(slotId, size = 'auto') {
-        const adContainer = document.createElement('div');
-        adContainer.className = 'ad-container';
+    loadAdMavenScript() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://ads.admaven.com/outstream.js?publisher=${this.config.admaven.publisherId}`;
+            script.async = true;
+            script.crossOrigin = 'anonymous';
+            
+            script.onload = resolve;
+            script.onerror = reject;
+            
+            document.head.appendChild(script);
+        });
+    }
+    
+    async initializeValueImpressions() {
+        if (this.isValueImpressionsInitialized) return;
         
-        const adUnit = document.createElement('ins');
-        adUnit.className = 'adsbygoogle';
-        adUnit.style.display = 'block';
-        adUnit.setAttribute('data-ad-client', this.config.publisherId);
-        adUnit.setAttribute('data-ad-slot', this.config.adSlots[slotId]);
-        adUnit.setAttribute('data-ad-format', size);
-        
-        adContainer.appendChild(adUnit);
-        
-        // Push to AdSense
         try {
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
+            // Load Value Impressions script
+            await this.loadValueImpressionsScript();
+            
+            // Initialize Value Impressions ad units
+            this.initializeValueImpressionsAds();
+            
+            this.isValueImpressionsInitialized = true;
+            console.log('Value Impressions ads initialized');
         } catch (error) {
-            console.error('AdSense push error:', error);
+            console.error('Failed to initialize Value Impressions:', error);
+        }
+    }
+    
+    loadValueImpressionsScript() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://valueimpressions.com/ads.js?publisher=${this.config.valueImpressions.publisherId}`;
+            script.async = true;
+            script.crossOrigin = 'anonymous';
+            
+            script.onload = resolve;
+            script.onerror = reject;
+            
+            document.head.appendChild(script);
+        });
+    }
+    
+    createOCodeBanner(slotId, size = '320x50') {
+        const adContainer = document.createElement('div');
+        adContainer.className = 'ocode-banner-container liquid-glass-ad';
+        adContainer.id = `ocode-banner-${slotId}`;
+        
+        // Apply liquid glass styling to ad container
+        adContainer.style.cssText = `
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 12px;
+            padding: 8px;
+            margin: 8px 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        `;
+        
+        // Initialize OCode Fuel banner
+        try {
+            window.OCodeFuel.createBanner({
+                containerId: adContainer.id,
+                slotId: this.config.ocodeFuel.bannerSlots[slotId],
+                size: size,
+                onLoad: () => this.onBannerLoad(slotId),
+                onError: (error) => this.onBannerError(slotId, error)
+            });
+        } catch (error) {
+            console.error('OCode banner creation error:', error);
         }
         
         return adContainer;
+    }
+    
+    createAdMavenOutstream(slotId) {
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'admaven-outstream-container liquid-glass-video';
+        videoContainer.id = `admaven-video-${slotId}`;
+        
+        // Apply liquid glass styling to video container
+        videoContainer.style.cssText = `
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            padding: 12px;
+            margin: 12px 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            max-width: 100%;
+            overflow: hidden;
+        `;
+        
+        // Initialize AdMaven outstream video
+        try {
+            window.AdMaven.createOutstream({
+                containerId: videoContainer.id,
+                slotId: this.config.admaven.videoSlots[slotId],
+                autoplay: false, // Unobtrusive - user initiated
+                muted: true,
+                onLoad: () => this.onVideoLoad(slotId),
+                onError: (error) => this.onVideoError(slotId, error)
+            });
+        } catch (error) {
+            console.error('AdMaven outstream creation error:', error);
+        }
+        
+        return videoContainer;
+    }
+    
+    onBannerLoad(slotId) {
+        console.log(`OCode banner loaded: ${slotId}`);
+        this.trackAdEvent('banner_load', slotId);
+    }
+    
+    onBannerError(slotId, error) {
+        console.error(`OCode banner error: ${slotId}`, error);
+        this.showAdFallback(slotId, 'banner');
+    }
+    
+    onVideoLoad(slotId) {
+        console.log(`AdMaven video loaded: ${slotId}`);
+        this.trackAdEvent('video_load', slotId);
+    }
+    
+    onVideoError(slotId, error) {
+        console.error(`AdMaven video error: ${slotId}`, error);
+        this.showAdFallback(slotId, 'video');
+    }
+    
+    showAdFallback(slotId, type) {
+        const container = document.getElementById(`${type === 'banner' ? 'ocode-banner' : 'admaven-video'}-${slotId}`);
+        if (container) {
+            container.innerHTML = `
+                <div class="ad-fallback liquid-glass-fallback">
+                    <span class="fallback-text">Advertisement</span>
+                </div>
+            `;
+        }
+    }
+    
+    trackAdEvent(event, slotId) {
+        // Track ad performance for optimization
+        const eventData = {
+            event,
+            slotId,
+            timestamp: Date.now(),
+            url: window.location.href
+        };
+        
+        // Store locally and send to analytics
+        localStorage.setItem(`ad_event_${Date.now()}`, JSON.stringify(eventData));
     }
 }
 ```

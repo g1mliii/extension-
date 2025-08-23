@@ -35,8 +35,60 @@ let currentUrl = ''; // To store the URL of the active tab
 
 // --- Utility Function to Display Messages ---
 function showMessage(text, type = 'info') {
-    // Message display removed - using console instead
     console.log(`${type.toUpperCase()}: ${text}`);
+
+    const messageBar = document.getElementById('message-bar');
+    const messageContent = document.getElementById('message-content');
+    const messageClose = document.getElementById('message-close');
+
+    if (!messageBar || !messageContent) {
+        console.warn('Message bar elements not found');
+        return;
+    }
+
+    // If same message is already showing, don't spam
+    if (messageContent.textContent === text && messageBar.classList.contains('show')) {
+        console.log('Same message already showing, skipping duplicate');
+        return;
+    }
+
+    // Clear existing classes and hide
+    messageBar.className = 'message-bar hidden';
+
+    // Set content and type
+    messageContent.textContent = text;
+
+    // Add type class and show
+    setTimeout(() => {
+        messageBar.className = `message-bar ${type} show`;
+    }, 10);
+
+    // Auto-hide after delay (longer for errors, shorter for success)
+    const hideDelay = type === 'error' ? 6000 : type === 'success' ? 4000 : 3000;
+
+    // Clear any existing timeout
+    if (window.messageTimeout) {
+        clearTimeout(window.messageTimeout);
+    }
+
+    window.messageTimeout = setTimeout(() => {
+        hideMessage();
+    }, hideDelay);
+}
+
+function hideMessage() {
+    const messageBar = document.getElementById('message-bar');
+    if (messageBar) {
+        messageBar.classList.remove('show');
+        setTimeout(() => {
+            messageBar.classList.add('hidden');
+        }, 400); // Match CSS transition duration
+    }
+
+    if (window.messageTimeout) {
+        clearTimeout(window.messageTimeout);
+        window.messageTimeout = null;
+    }
 }
 
 // --- Helper Functions for Stats Display ---
@@ -47,10 +99,10 @@ function updateStatsDisplay(data) {
     }
 
     // Use final_trust_score first, then trust_score, handle both number and null values
-    let trustScore = data.final_trust_score !== null && data.final_trust_score !== undefined 
-        ? data.final_trust_score 
+    let trustScore = data.final_trust_score !== null && data.final_trust_score !== undefined
+        ? data.final_trust_score
         : data.trust_score;
-    
+
     // If no score available, calculate domain baseline score
     if (trustScore === null || trustScore === undefined) {
         trustScore = calculateDomainBaseline(data.domain);
@@ -64,11 +116,11 @@ function updateStatsDisplay(data) {
     spamCountSpan.textContent = data.spam_reports_count || '0';
     misleadingCountSpan.textContent = data.misleading_reports_count || '0';
     scamCountSpan.textContent = data.scam_reports_count || '0';
-    
+
     // Add data source indicator (subtle)
     if (data.data_source) {
-        const sourceIndicator = data.data_source === 'baseline' ? '(estimated)' : 
-                               data.data_source === 'domain' ? '(domain)' : '';
+        const sourceIndicator = data.data_source === 'baseline' ? '(estimated)' :
+            data.data_source === 'domain' ? '(domain)' : '';
         if (sourceIndicator) {
             trustScoreSpan.title = `Trust score ${sourceIndicator}`;
         }
@@ -77,20 +129,21 @@ function updateStatsDisplay(data) {
 
 function updateScoreBar(score) {
     const progressRing = document.getElementById('progress-ring');
-    
+
     if (progressRing) {
         // Convert score (0-100) to percentage
         const percentage = Math.max(0, Math.min(100, score));
-        
+
         // Calculate the circumference of the circle (2 * π * radius)
-        const radius = 55;
+        // Must match the SVG circle radius (r="45" in popup.html)
+        const radius = 45;
         const circumference = 2 * Math.PI * radius;
-        
+
         // Calculate the stroke-dashoffset based on percentage
         // For 0%, offset = circumference (no fill)
         // For 100%, offset = 0 (full fill)
         const offset = circumference - (percentage / 100) * circumference;
-        
+
         // Determine color based on score
         let strokeColor;
         if (score >= 80) {
@@ -104,12 +157,12 @@ function updateScoreBar(score) {
         } else {
             strokeColor = 'rgba(255, 255, 255, 0.2)'; // Gray for unknown
         }
-        
+
         // Update the progress ring
         progressRing.style.strokeDasharray = circumference;
         progressRing.style.strokeDashoffset = offset;
         progressRing.style.stroke = strokeColor;
-        
+
         // Add a subtle glow effect based on score
         if (score > 0) {
             progressRing.style.filter = `drop-shadow(0 0 8px ${strokeColor}80)`;
@@ -126,42 +179,42 @@ function calculateDomainBaseline(domain) {
         'google.com': 85, 'youtube.com': 75, 'wikipedia.org': 85,
         'github.com': 80, 'stackoverflow.com': 82, 'microsoft.com': 78,
         'apple.com': 80, 'amazon.com': 72, 'netflix.com': 75,
-        
+
         // Educational domains (75-85)
         'mit.edu': 85, 'stanford.edu': 85, 'harvard.edu': 85,
         'coursera.org': 78, 'khanacademy.org': 80,
-        
+
         // News domains (65-80)
         'cnn.com': 70, 'bbc.com': 78, 'reuters.com': 80,
         'nytimes.com': 75, 'npr.org': 78,
-        
+
         // Social media (55-65)
         'facebook.com': 60, 'twitter.com': 58, 'x.com': 58,
         'instagram.com': 62, 'linkedin.com': 68, 'reddit.com': 65,
         'tiktok.com': 55,
-        
+
         // E-commerce (60-70)
         'ebay.com': 65, 'etsy.com': 68, 'paypal.com': 75
     };
-    
+
     if (domain && domainBaselines[domain]) {
         return domainBaselines[domain];
     }
-    
+
     // Default baseline based on TLD
     if (domain) {
         if (domain.endsWith('.edu') || domain.endsWith('.gov')) return 75;
         if (domain.endsWith('.org')) return 65;
         if (domain.endsWith('.com') || domain.endsWith('.net')) return 60;
     }
-    
+
     return 50; // Ultimate fallback
 }
 
 function clearStatsDisplay() {
     const domain = extractDomainFromCurrentUrl();
     const baselineScore = calculateDomainBaseline(domain);
-    
+
     trustScoreSpan.textContent = `${baselineScore}%`;
     totalRatingsSpan.textContent = '0';
     spamCountSpan.textContent = '0';
@@ -225,7 +278,7 @@ async function fetchUrlStatsBatched(url) {
 
 // Single URL fetch (extracted from main function)
 async function fetchUrlStatsSingle(url) {
-    showMessage('Fetching URL trust score...', 'info');
+    showMessage('Loading trust score...', 'info');
 
     let session = null;
     try {
@@ -242,7 +295,7 @@ async function fetchUrlStatsSingle(url) {
         'Accept': 'application/json',
         'apikey': anonKey
     };
-    
+
     // Only add Authorization header if user is logged in
     if (session && session.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -252,13 +305,13 @@ async function fetchUrlStatsSingle(url) {
     }
 
     const requestId = generateRequestId();
-    
+
     console.log('Batch fetch request:', {
         requestId,
         url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
         authenticated: !!session
     });
-    
+
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -271,20 +324,20 @@ async function fetchUrlStatsSingle(url) {
             },
             signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ 
-                error: 'Network error', 
+            const errorData = await response.json().catch(() => ({
+                error: 'Network error',
                 code: 'NetworkError',
                 timestamp: new Date().toISOString()
             }));
-            
+
             // Handle standardized error responses from unified API
             const errorMsg = errorData.error || `HTTP ${response.status}`;
             const errorCode = errorData.code || 'UnknownError';
-            
+
             console.error('API Error (Batch):', {
                 status: response.status,
                 error: errorMsg,
@@ -293,7 +346,7 @@ async function fetchUrlStatsSingle(url) {
                 url: url,
                 requestId
             });
-            
+
             // Handle 406 errors specifically - don't fail the request
             if (response.status === 406) {
                 console.warn('406 Not Acceptable in batch request - using fallback');
@@ -301,7 +354,7 @@ async function fetchUrlStatsSingle(url) {
                 showMessage('Loading trust score...', 'info');
                 return; // Don't throw error for 406
             }
-            
+
             // Provide user-friendly error messages based on error codes
             let userMessage = `Failed to fetch trust score: ${errorMsg}`;
             if (errorCode === 'ValidationError') {
@@ -313,14 +366,14 @@ async function fetchUrlStatsSingle(url) {
             } else if (errorCode === 'DatabaseError') {
                 userMessage = 'Database temporarily unavailable. Please try again later.';
             }
-            
+
             showMessage(userMessage, 'error');
             clearStatsDisplay();
             throw new Error(errorMsg);
         }
-        
+
         const data = await response.json();
-        
+
         console.log('Batch request successful:', {
             requestId,
             status: response.status,
@@ -329,7 +382,7 @@ async function fetchUrlStatsSingle(url) {
             trustScore: data.final_trust_score || data.trust_score,
             ratingCount: data.rating_count
         });
-        
+
         // Cache the response
         const cacheData = {
             data: data,
@@ -339,12 +392,10 @@ async function fetchUrlStatsSingle(url) {
         saveCacheToStorage(url, cacheData);
 
         updateStatsDisplay(data);
-        const dataSource = data.data_source || 'api';
-        const cacheStatus = data.cache_status || 'fresh';
-        showMessage(`Trust score loaded (${dataSource}, ${cacheStatus}).`, 'success');
+        showMessage('Trust score loaded successfully.', 'success');
     } catch (error) {
         clearTimeout(timeoutId);
-        
+
         if (error.name === 'AbortError') {
             showMessage('Request timed out. Please try again.', 'error');
             clearStatsDisplay();
@@ -679,9 +730,9 @@ async function fetchUrlStats(url, forceRefresh = false) {
         console.log('Already loading stats, skipping duplicate request');
         return;
     }
-    
+
     isLoadingStats = true;
-    
+
     try {
         // Check cache first (unless force refresh)
         if (!forceRefresh) {
@@ -689,11 +740,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION_MS) {
                 console.log('Using cached stats for', url);
                 updateStatsDisplay(cached.data);
-                
-                // Show cache age in message
-                const cacheAgeMinutes = Math.floor((Date.now() - cached.timestamp) / 60000);
-                const cacheStatus = cached.data.cache_status || 'cached';
-                showMessage(`Stats loaded from ${cacheStatus} cache (${cacheAgeMinutes}m old).`, 'success');
+                showMessage('Trust score loaded successfully.', 'success');
                 isLoadingStats = false;
                 return;
             } else if (cached) {
@@ -710,7 +757,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             return result;
         }
 
-        showMessage('Fetching URL trust score...', 'info');
+        showMessage('Loading trust score...', 'info');
 
         // Get session with improved error handling
         let session = null;
@@ -721,7 +768,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             console.log('Session check completed (proceeding as anonymous)');
             session = null;
         }
-        
+
         const anonKey = CONFIG.SUPABASE_ANON_KEY;
 
         const headers = {
@@ -729,7 +776,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             'Accept': 'application/json',
             'apikey': anonKey
         };
-        
+
         // Only add Authorization header if user is logged in
         if (session && session.access_token) {
             headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -739,18 +786,18 @@ async function fetchUrlStats(url, forceRefresh = false) {
         }
 
         const requestId = generateRequestId();
-        
+
         console.log('Making fetch request:', {
             requestId,
             url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
             authenticated: !!session,
             headers: { ...headers, Authorization: '[REDACTED]' }
         });
-        
+
         // Add timeout to prevent hanging requests
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-        
+
         const response = await fetch(`${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`, {
             headers: {
                 ...headers,
@@ -758,26 +805,26 @@ async function fetchUrlStats(url, forceRefresh = false) {
             },
             signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         console.log('Response received:', {
             status: response.status,
             ok: response.ok,
             requestId
         });
-        
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ 
-                error: 'Network error', 
+            const errorData = await response.json().catch(() => ({
+                error: 'Network error',
                 code: 'NetworkError',
                 timestamp: new Date().toISOString()
             }));
-            
+
             // Handle standardized error responses from unified API
             const errorMsg = errorData.error || `HTTP ${response.status}`;
             const errorCode = errorData.code || 'UnknownError';
-            
+
             console.error('API Error:', {
                 status: response.status,
                 error: errorMsg,
@@ -786,7 +833,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
                 url: url,
                 requestId
             });
-            
+
             // Handle 406 errors specifically
             if (response.status === 406) {
                 console.warn('406 Not Acceptable - API may be processing request, retrying...');
@@ -795,7 +842,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
                 showMessage('Loading trust score...', 'info');
                 return;
             }
-            
+
             // Provide user-friendly error messages based on error codes
             let userMessage = `Failed to fetch trust score: ${errorMsg}`;
             if (errorCode === 'ValidationError') {
@@ -807,12 +854,12 @@ async function fetchUrlStats(url, forceRefresh = false) {
             } else if (errorCode === 'DatabaseError') {
                 userMessage = 'Database temporarily unavailable. Please try again later.';
             }
-            
+
             showMessage(userMessage, 'error');
             clearStatsDisplay();
             return;
         }
-        
+
         const data = await response.json();
         console.log('Successful response:', {
             requestId,
@@ -832,10 +879,8 @@ async function fetchUrlStats(url, forceRefresh = false) {
         saveCacheToStorage(url, cacheData);
 
         updateStatsDisplay(data);
-        const dataSource = data.data_source || 'api';
-        const cacheStatus = data.cache_status || 'fresh';
-        showMessage(forceRefresh ? 'Stats refreshed!' : `Trust score loaded (${dataSource}, ${cacheStatus}).`, 'success');
-        
+        showMessage(forceRefresh ? 'Trust score refreshed!' : 'Trust score loaded successfully.', 'success');
+
         isLoadingStats = false;
     } catch (error) {
         console.error('Error fetching URL stats:', {
@@ -844,10 +889,10 @@ async function fetchUrlStats(url, forceRefresh = false) {
             url: url,
             timestamp: new Date().toISOString()
         });
-        
+
         // Handle different types of network and runtime errors
         let userMessage = 'Failed to fetch trust score';
-        
+
         if (error.name === 'AbortError') {
             userMessage = 'Request timed out. Please try again.';
         } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -863,7 +908,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
         } else {
             userMessage = `Network error: ${error.message}`;
         }
-        
+
         showMessage(userMessage, 'error');
         clearStatsDisplay();
     } finally {
@@ -886,6 +931,10 @@ submitRatingBtn.addEventListener('click', async () => {
         return;
     }
 
+    // Disable submit button and show loading state
+    submitRatingBtn.disabled = true;
+    submitRatingBtn.textContent = '⏳ Submitting...';
+
     showMessage('Submitting rating...', 'info');
 
     try {
@@ -897,25 +946,25 @@ submitRatingBtn.addEventListener('click', async () => {
             console.log('Session check completed for rating submission');
             session = null;
         }
-        
+
         if (!session || !session.access_token) {
             showMessage('You must be logged in to submit a rating.', 'error');
             return;
         }
 
         const requestId = generateRequestId();
-        
+
         console.log('Submitting rating:', {
             requestId,
             url: currentUrl,
             score: score,
             reports: { isSpam, isMisleading, isScam }
         });
-        
+
         // Add timeout to prevent hanging requests
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-        
+
         const response = await fetch(`${API_BASE_URL}/rating`, {
             method: 'POST',
             headers: {
@@ -935,20 +984,20 @@ submitRatingBtn.addEventListener('click', async () => {
             }),
             signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ 
-                error: 'Network error', 
+            const errorData = await response.json().catch(() => ({
+                error: 'Network error',
                 code: 'NetworkError',
                 timestamp: new Date().toISOString()
             }));
-            
+
             // Handle standardized error responses from unified API
             const errorMsg = errorData.error || `HTTP ${response.status}`;
             const errorCode = errorData.code || 'UnknownError';
-            
+
             console.error('Rating Submission Error:', {
                 status: response.status,
                 error: errorMsg,
@@ -957,7 +1006,7 @@ submitRatingBtn.addEventListener('click', async () => {
                 url: currentUrl,
                 requestId
             });
-            
+
             // Handle 406 errors specifically for rating submission
             if (response.status === 406) {
                 console.warn('406 Not Acceptable during rating submission - may still succeed');
@@ -966,44 +1015,52 @@ submitRatingBtn.addEventListener('click', async () => {
                 // The rating might still have been processed successfully
             } else {
                 // Provide user-friendly error messages based on error codes
-                let userMessage = `Rating failed: ${errorMsg}`;
+                let userMessage = `❌ Rating failed: ${errorMsg}`;
                 if (errorCode === 'ValidationError') {
-                    userMessage = 'Invalid rating data. Please check your inputs and try again.';
+                    userMessage = '⚠️ Invalid rating data. Please check your inputs and try again.';
                 } else if (errorCode === 'AuthError') {
-                    userMessage = 'Authentication expired. Please log in again to submit ratings.';
+                    userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
                 } else if (errorCode === 'RateLimitError') {
-                    userMessage = 'Too many rating submissions. Please wait before submitting another.';
+                    userMessage = '⏱️ Too many rating submissions. Please wait before submitting another.';
                 } else if (errorCode === 'DatabaseError') {
-                    userMessage = 'Database temporarily unavailable. Please try submitting again.';
+                    userMessage = '🔧 Database temporarily unavailable. Please try submitting again.';
                 } else if (response.status === 409) {
-                    userMessage = 'You have already rated this URL recently. Please wait 24 hours before rating again.';
+                    userMessage = '⏰ You have already rated this URL recently. Please wait 24 hours before rating again.';
                 }
-                
+
                 showMessage(userMessage, 'error');
                 return;
             }
         }
 
         const data = await response.json();
-        
+
         console.log('Rating submission successful:', {
             requestId,
             status: response.status,
             message: data.message,
             processing: data.processing
         });
-        
-        showMessage(data.message || 'Rating submitted successfully!', 'success');
-        
+
+        // Add success animation to the rating form
+        const ratingForm = document.querySelector('.rating-form');
+        if (ratingForm) {
+            ratingForm.classList.add('success-animation');
+            setTimeout(() => {
+                ratingForm.classList.remove('success-animation');
+            }, 600);
+        }
+
+        // Show prominent success message
+        const successMessage = data.message || 'Rating submitted successfully!';
+        showMessage(`✅ ${successMessage}`, 'success');
+
         // Update displayed stats with the latest from API response
         if (data.urlStats) {
             updateStatsDisplay(data.urlStats);
-            
-            // Show processing status if domain analysis is running
-            if (data.processing) {
-                showMessage('Rating submitted! Domain analysis is running in the background to update trust scores.', 'info');
-            }
-            
+
+            // Domain analysis happens in background - no need to notify user
+
             // Invalidate cache since we have new data
             statsCache.delete(currentUrl);
             const cacheData = {
@@ -1013,12 +1070,22 @@ submitRatingBtn.addEventListener('click', async () => {
             statsCache.set(currentUrl, cacheData);
             saveCacheToStorage(currentUrl, cacheData);
         }
-        
+
+        // Temporarily disable submit button to prevent double submission
+        submitRatingBtn.disabled = true;
+        submitRatingBtn.textContent = '✅ Submitted!';
+
         // Reset form fields after successful submission
-        ratingScoreSelect.value = '1';
-        isSpamCheckbox.checked = false;
-        isMisleadingCheckbox.checked = false;
-        isScamCheckbox.checked = false;
+        setTimeout(() => {
+            ratingScoreSelect.value = '1';
+            isSpamCheckbox.checked = false;
+            isMisleadingCheckbox.checked = false;
+            isScamCheckbox.checked = false;
+
+            // Re-enable submit button
+            submitRatingBtn.disabled = false;
+            submitRatingBtn.textContent = 'Submit Rating';
+        }, 2000);
     } catch (error) {
         console.error('Error submitting rating:', {
             error: error.message,
@@ -1026,34 +1093,38 @@ submitRatingBtn.addEventListener('click', async () => {
             url: currentUrl,
             timestamp: new Date().toISOString()
         });
-        
+
         // Handle different types of network and runtime errors
-        let userMessage = 'Failed to submit rating';
-        
+        let userMessage = '❌ Failed to submit rating';
+
         if (error.name === 'AbortError') {
-            userMessage = 'Request timed out. Please try submitting again.';
+            userMessage = '⏱️ Request timed out. Please try submitting again.';
         } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            userMessage = 'Network connection error. Please check your internet connection and try again.';
+            userMessage = '🌐 Network connection error. Please check your internet connection and try again.';
         } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-            userMessage = 'Authentication expired. Please log in again to submit ratings.';
+            userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
-            userMessage = 'Rate limit exceeded. Please wait before submitting another rating.';
+            userMessage = '⏱️ Rate limit exceeded. Please wait before submitting another rating.';
         } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
-            userMessage = 'Server error. Please try submitting your rating again.';
+            userMessage = '🔧 Server error. Please try submitting your rating again.';
         } else if (error.message.includes('timeout')) {
-            userMessage = 'Request timed out. Please try submitting again.';
+            userMessage = '⏱️ Request timed out. Please try submitting again.';
         } else {
-            userMessage = `Network error: ${error.message}`;
+            userMessage = `🌐 Network error: ${error.message}`;
         }
-        
+
         showMessage(userMessage, 'error');
+
+        // Re-enable submit button on error
+        submitRatingBtn.disabled = false;
+        submitRatingBtn.textContent = 'Submit Rating';
     }
 });
 
 // --- Initial Setup and Current URL Logic ---
 async function fetchCurrentUrlAndStats() {
     console.log('fetchCurrentUrlAndStats called');
-    
+
     try {
         // Ensure Chrome extension APIs are available
         if (!chrome || !chrome.tabs) {
@@ -1074,7 +1145,7 @@ async function fetchCurrentUrlAndStats() {
         if (tabs && tabs[0] && tabs[0].url) {
             currentUrl = tabs[0].url;
             console.log('Current URL retrieved:', currentUrl);
-            
+
             if (currentUrlSpan) {
                 currentUrlSpan.textContent = currentUrl;
             }
@@ -1106,8 +1177,6 @@ async function fetchCurrentUrlAndStats() {
         showMessage('Error retrieving current tab URL.', 'error');
     }
 }
-
-// Theme management removed - single dark mode only
 
 // --- Affiliate Links ---
 function initAffiliateLinks() {
@@ -1151,6 +1220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize UI components first (no async operations)
         initCloseButton();
+        initMessageBar();
         initHeaderAuth();
         initAffiliateLinks();
         loadCacheFromStorage();
@@ -1224,6 +1294,26 @@ function initCloseButton() {
             window.close();
         });
     }
+}
+
+// --- Message Bar Handler ---
+function initMessageBar() {
+    const messageClose = document.getElementById('message-close');
+    if (messageClose) {
+        messageClose.addEventListener('click', () => {
+            hideMessage();
+        });
+    }
+
+    // Add keyboard support for closing messages (Escape key)
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            const messageBar = document.getElementById('message-bar');
+            if (messageBar && messageBar.classList.contains('show')) {
+                hideMessage();
+            }
+        }
+    });
 }
 
 // --- Header Login/Signup Handlers ---

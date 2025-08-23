@@ -68,36 +68,32 @@ This implementation plan converts the UI enhancement design into actionable codi
   - Test warning display with various rating scenarios and thresholds
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 10. Develop website overlay content script system with ads integration
-  - Create trust-overlay.js content script with existing liquid glass styling
-  - Implement circular trust score overlay with backdrop-filter transparency
-  - Add positioning logic for unobtrusive top-right corner placement
-  - Integrate compact ad space within overlay design using GoogleAdsManager
-  - Create smooth show/hide animations with lightweight performance
-  - Implement click-to-open-extension functionality that opens full popup from extension bar
-  - Add close button functionality and auto-hide after 8 seconds with hover-to-persist
-  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
+- [ ] 8. Develop auto-opening compact extension popup system
+  - Create CompactPopupManager class to detect new website navigation
+  - Implement auto-opening of the existing extension popup in compact mode when visiting new websites
+  - Add domain tracking to localStorage to detect website changes
+  - Create compact popup layout showing only trust score/rating for current URL and placeholder ad space
+  - Update background script to handle compact mode initialization messages
+  - Create popup state management for compact vs expanded modes
+  - Implement clickable expansion from compact to full popup with smooth transition animations
+  - Add proper sizing and layout adjustments for compact mode
+  - Ensure all core functionality works in both compact and expanded modes
+  - Test auto-opening compact popup functionality and state management across different websites
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
 
-- [ ] 11. Implement content script communication system
-  - Update manifest.json to include content script configuration for all URLs
-  - Create background script message handling for popup opening and trust score requests
-  - Implement secure communication between content script and extension
-  - Add error handling for failed communications and fallback behavior
-  - Test overlay functionality across different websites and domains
-  - Ensure overlay doesn't interfere with website functionality or accessibility
-  - _Requirements: 8.1, 8.2, 8.5, 8.6_
-
-- [ ] 8. Create Google Ads integration system (PRIORITY - needed for overlay)
-  - Implement GoogleAdsManager class with AdSense script loading
-  - Create ad unit containers with liquid glass styling that matches extension theme
-  - Add proper ad placement in header area when user is logged in
-  - Design ad slots for both full extension popup and compact overlay versions
-  - Implement error handling and fallback display for failed ad loading
-  - Add ad performance tracking and analytics integration
+- [ ] 9. Create multi-provider monetization integration system (OCode Fuel, AdMaven, Value Impressions)
+  - Implement MonetizationManager class with OCode Fuel banner, AdMaven video, and Value Impressions ad loading
+  - Create OCode Fuel banner ad containers with liquid glass styling that matches extension theme
+  - Implement AdMaven outstream video ads with unobtrusive, user-friendly display
+  - Integrate Value Impressions ad units for additional revenue optimization
+  - Add proper ad placement in both compact and full popup modes for all three providers
+  - Design ad slots that maximize revenue while maintaining user experience
+  - Implement error handling and fallback display for failed ad loading across all providers
+  - Add ad performance tracking and analytics integration for all three ad networks
   - Test ad display without interfering with core extension functionality
-  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
 
-- [ ] 9. Implement affiliate link management system
+- [ ] 10. Implement affiliate link management system
   - Create AffiliateManager class with click tracking and analytics
   - Update existing affiliate links (1Password, NordVPN) with proper tracking
   - Implement liquid glass styling for affiliate section matching overall theme
@@ -106,35 +102,36 @@ This implementation plan converts the UI enhancement design into actionable codi
   - Test affiliate link functionality and tracking accuracy
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 12. Integrate all enhanced UI components with existing extension
-  - Update popup.js to initialize all new UI enhancement systems
+- [ ] 11. Integrate all enhanced UI components with existing extension
+  - Update popup.js to initialize all new UI enhancement systems including compact mode
   - Ensure backward compatibility with existing authentication and rating systems
   - Integrate new notification system with existing error handling
   - Connect local score calculator with rating submission workflow
-  - Ensure full extension popup works when opened from overlay click or extension bar
-  - Test complete user flow from overlay to full extension popup to rating submission
-  - Verify all existing functionality works with enhanced UI components
-  - _Requirements: 1.1, 1.2, 1.3, 3.4, 4.5, 9.1, 9.2, 9.3_
+  - Ensure full extension popup works when opened from compact mode or extension bar
+  - Test complete user flow from compact popup to expanded popup to rating submission
+  - Verify all existing functionality works with enhanced UI components in both modes
+  - _Requirements: 1.1, 1.2, 1.3, 3.4, 4.5, 8.5, 9.1, 9.2, 9.3_
 
-- [ ] 13. Implement comprehensive error handling and graceful degradation
+- [ ] 12. Implement comprehensive error handling and graceful degradation
   - Create ErrorHandler class with fallback strategies for each UI component
-  - Add graceful degradation for failed Google Ads loading
-  - Implement fallback behavior for content script injection failures
+  - Add graceful degradation for failed OCode Fuel, AdMaven, and Value Impressions ad loading
+  - Implement fallback behavior for compact popup initialization failures
   - Add error recovery for notification system and tooltip failures
   - Create user-friendly error messages with liquid glass styling
-  - Test error scenarios and ensure extension remains functional
+  - Test error scenarios and ensure extension remains functional in both compact and expanded modes
   - _Requirements: 1.3, 6.4, 8.4, 9.2_
 
-- [ ] 14. Add performance optimizations and memory management
-  - Implement lazy loading for Google Ads and affiliate components
+- [ ] 13. Add performance optimizations and memory management
+  - Implement lazy loading for OCode Fuel banners, AdMaven videos, Value Impressions ads, and affiliate components
   - Add debouncing for rapid user interactions and rating calculations
-  - Create efficient DOM manipulation patterns for UI updates
+  - Create efficient DOM manipulation patterns for UI updates in both compact and expanded modes
   - Implement cleanup for event listeners and animation timers
   - Add memory leak prevention for notification and tooltip systems
-  - Test performance impact of new UI enhancements on extension load time
+  - Optimize compact popup auto-opening to minimize performance impact on website navigation
+  - Test performance impact of new UI enhancements on extension load time and website performance
   - _Requirements: 9.1, 9.4, 9.5_
 
-- [ ] 15. Create comprehensive testing suite for UI enhancements
+- [ ] 14. Create comprehensive testing suite for UI enhancements
   - Write unit tests for all new UI component classes
   - Create integration tests for component interaction and data flow
   - Add visual regression tests for iOS 26 liquid glass styling
