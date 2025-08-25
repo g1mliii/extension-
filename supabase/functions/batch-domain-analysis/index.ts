@@ -4,194 +4,195 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { 
-    createRouter, 
-    RouteConfig, 
-    AuthError,
-    validateRequestMethod,
-    parseJsonBody,
-    ValidationError
+import {
+  createRouter,
+  RouteConfig,
+  AuthError,
+  validateRequestMethod,
+  parseJsonBody,
+  ValidationError
 } from '../_shared/routing.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const googleApiKey = Deno.env.get('GOOGLE_SAFE_BROWSING_API_KEY')
 const hybridApiKey = Deno.env.get('HYBRID_ANALYSIS_API_KEY')
+const whoisApiKey = Deno.env.get('WHOIS_XML_API_KEY')
 
 // Route configuration
 const ROUTES: RouteConfig[] = [
-    {
-        method: 'POST',
-        path: '/',
-        handler: 'handleBatchDomainAnalysis',
-        requiresAuth: false,
-        description: 'Batch analyze domains for security and trust metrics'
-    },
-    {
-        method: 'OPTIONS',
-        path: '*',
-        handler: 'handleCors',
-        requiresAuth: false,
-        description: 'CORS preflight requests'
-    }
+  {
+    method: 'POST',
+    path: '/',
+    handler: 'handleBatchDomainAnalysis',
+    requiresAuth: false,
+    description: 'Batch analyze domains for security and trust metrics'
+  },
+  {
+    method: 'OPTIONS',
+    path: '*',
+    handler: 'handleCors',
+    requiresAuth: false,
+    description: 'CORS preflight requests'
+  }
 ]
 
 // Validate API key for security
 function validateApiKey(req: Request): void {
-    const authHeader = req.headers.get('Authorization')
-    const apiKey = req.headers.get('apikey')
-    
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
-    // Check for API key first (for public access)
-    if (apiKey === supabaseAnonKey || apiKey === supabaseServiceKey) {
-        return
+  const authHeader = req.headers.get('Authorization')
+  const apiKey = req.headers.get('apikey')
+
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+  // Check for API key first (for public access)
+  if (apiKey === supabaseAnonKey || apiKey === supabaseServiceKey) {
+    return
+  }
+
+  // Check Authorization header
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '')
+    if (token === supabaseAnonKey || token === supabaseServiceKey) {
+      return
     }
-    
-    // Check Authorization header
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.replace('Bearer ', '')
-        if (token === supabaseAnonKey || token === supabaseServiceKey) {
-            return
-        }
-    }
-    
-    throw new AuthError('Invalid API key')
+  }
+
+  throw new AuthError('Invalid API key')
 }
 
 // Handler for batch domain analysis
 async function handleBatchDomainAnalysis(req: Request, route: RouteConfig, requestId: string): Promise<Response> {
-    // Validate request method
-    validateRequestMethod(req.method, ['POST'])
-    
-    // For now, allow all requests to proceed - this function is called internally
-    // TODO: Implement proper service-to-service authentication if needed
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: { autoRefreshToken: false, persistSession: false }
-    })
+  // Validate request method
+  validateRequestMethod(req.method, ['POST'])
 
-    const body = await parseJsonBody(req, false) || {}
-    const { limit = 10, domains = null, priority = 'normal' } = body
+  // For now, allow all requests to proceed - this function is called internally
+  // TODO: Implement proper service-to-service authentication if needed
 
-    let domainsToAnalyze: any[] = []
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
 
-    if (domains && Array.isArray(domains)) {
-        // Specific domains provided
-        domainsToAnalyze = domains.map(domain => ({ domain }))
-    } else {
-        // Get domains that need analysis (no cache or expired cache)
-        const { data: fetchedDomains, error: domainsError } = await supabase
-            .from('url_stats')
-            .select('domain')
-            .not('domain', 'is', null)
-            .not('domain', 'eq', 'unknown')
-            .limit(limit)
+  const body = await parseJsonBody(req, false) || {}
+  const { limit = 10, domains = null, priority = 'normal' } = body
 
-        if (domainsError) {
-            throw new Error(`Error fetching domains: ${domainsError.message}`)
-        }
+  let domainsToAnalyze: any[] = []
 
-        domainsToAnalyze = fetchedDomains || []
+  if (domains && Array.isArray(domains)) {
+    // Specific domains provided
+    domainsToAnalyze = domains.map(domain => ({ domain }))
+  } else {
+    // Get domains that need analysis (no cache or expired cache)
+    const { data: fetchedDomains, error: domainsError } = await supabase
+      .from('url_stats')
+      .select('domain')
+      .not('domain', 'is', null)
+      .not('domain', 'eq', 'unknown')
+      .limit(limit)
+
+    if (domainsError) {
+      throw new Error(`Error fetching domains: ${domainsError.message}`)
     }
 
-    if (domainsToAnalyze.length === 0) {
-        return new Response(
-            JSON.stringify({ 
-                message: 'No domains need analysis',
-                request_id: requestId
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
+    domainsToAnalyze = fetchedDomains || []
+  }
 
-    // Filter out domains that already have recent cache (unless high priority)
-    const uniqueDomains = [...new Set(domainsToAnalyze.map(d => d.domain))]
-    const domainsNeedingAnalysis: string[] = []
-
-    for (const domain of uniqueDomains) {
-        if (priority === 'high') {
-            // High priority - analyze regardless of cache
-            domainsNeedingAnalysis.push(domain)
-        } else {
-            // Normal priority - check cache first using safe function
-            try {
-                const { data: cacheCheck, error: cacheError } = await supabase
-                    .rpc('check_domain_cache_exists', { p_domain: domain })
-                    .single()
-
-                if (cacheError || !cacheCheck || !cacheCheck.cache_valid) {
-                    domainsNeedingAnalysis.push(domain)
-                }
-            } catch (error) {
-                console.warn(`Error checking cache for ${domain}, including in analysis:`, error.message)
-                domainsNeedingAnalysis.push(domain)
-            }
-        }
-    }
-
-    if (domainsNeedingAnalysis.length === 0) {
-        return new Response(
-            JSON.stringify({ 
-                message: 'All domains have recent cache',
-                request_id: requestId
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // Analyze domains in parallel (with concurrency limit)
-    const results = []
-    const concurrencyLimit = priority === 'high' ? 5 : 3 // Higher concurrency for high priority
-
-    for (let i = 0; i < domainsNeedingAnalysis.length; i += concurrencyLimit) {
-        const batch = domainsNeedingAnalysis.slice(i, i + concurrencyLimit)
-        const batchPromises = batch.map(domain => analyzeSingleDomain(domain, supabase))
-        const batchResults = await Promise.allSettled(batchPromises)
-        
-        results.push(...batchResults.map((result, index) => ({
-            domain: batch[index],
-            success: result.status === 'fulfilled',
-            data: result.status === 'fulfilled' ? result.value : null,
-            error: result.status === 'rejected' ? (result.reason as Error)?.message || 'Unknown error' : null
-        })))
-
-        // Small delay between batches to be respectful to external APIs
-        if (i + concurrencyLimit < domainsNeedingAnalysis.length) {
-            await new Promise(resolve => setTimeout(resolve, priority === 'high' ? 500 : 1000))
-        }
-    }
-
-    // Update url_stats with domain information where missing
-    for (const result of results) {
-        if (result.success && result.data) {
-            await supabase
-                .from('url_stats')
-                .update({ domain: result.domain })
-                .eq('domain', result.domain)
-        }
-    }
-
-    const successCount = results.filter(r => r.success).length
-    const errorCount = results.filter(r => !r.success).length
-
+  if (domainsToAnalyze.length === 0) {
     return new Response(
-        JSON.stringify({
-            message: `Batch analysis completed`,
-            analyzed: successCount,
-            errors: errorCount,
-            results: results,
-            request_id: requestId
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        message: 'No domains need analysis',
+        request_id: requestId
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+  }
+
+  // Filter out domains that already have recent cache (unless high priority)
+  const uniqueDomains = [...new Set(domainsToAnalyze.map(d => d.domain))]
+  const domainsNeedingAnalysis: string[] = []
+
+  for (const domain of uniqueDomains) {
+    if (priority === 'high') {
+      // High priority - analyze regardless of cache
+      domainsNeedingAnalysis.push(domain)
+    } else {
+      // Normal priority - check cache first using safe function
+      try {
+        const { data: cacheCheck, error: cacheError } = await supabase
+          .rpc('check_domain_cache_exists', { p_domain: domain })
+          .single()
+
+        if (cacheError || !cacheCheck || !cacheCheck.cache_valid) {
+          domainsNeedingAnalysis.push(domain)
+        }
+      } catch (error) {
+        console.warn(`Error checking cache for ${domain}, including in analysis:`, error.message)
+        domainsNeedingAnalysis.push(domain)
+      }
+    }
+  }
+
+  if (domainsNeedingAnalysis.length === 0) {
+    return new Response(
+      JSON.stringify({
+        message: 'All domains have recent cache',
+        request_id: requestId
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Analyze domains in parallel (with concurrency limit)
+  const results = []
+  const concurrencyLimit = priority === 'high' ? 5 : 3 // Higher concurrency for high priority
+
+  for (let i = 0; i < domainsNeedingAnalysis.length; i += concurrencyLimit) {
+    const batch = domainsNeedingAnalysis.slice(i, i + concurrencyLimit)
+    const batchPromises = batch.map(domain => analyzeSingleDomain(domain, supabase))
+    const batchResults = await Promise.allSettled(batchPromises)
+
+    results.push(...batchResults.map((result, index) => ({
+      domain: batch[index],
+      success: result.status === 'fulfilled',
+      data: result.status === 'fulfilled' ? result.value : null,
+      error: result.status === 'rejected' ? (result.reason as Error)?.message || 'Unknown error' : null
+    })))
+
+    // Small delay between batches to be respectful to external APIs
+    if (i + concurrencyLimit < domainsNeedingAnalysis.length) {
+      await new Promise(resolve => setTimeout(resolve, priority === 'high' ? 500 : 1000))
+    }
+  }
+
+  // Update url_stats with domain information where missing
+  for (const result of results) {
+    if (result.success && result.data) {
+      await supabase
+        .from('url_stats')
+        .update({ domain: result.domain })
+        .eq('domain', result.domain)
+    }
+  }
+
+  const successCount = results.filter(r => r.success).length
+  const errorCount = results.filter(r => !r.success).length
+
+  return new Response(
+    JSON.stringify({
+      message: `Batch analysis completed`,
+      analyzed: successCount,
+      errors: errorCount,
+      results: results,
+      request_id: requestId
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
 async function analyzeSingleDomain(domain: string, supabase: any) {
   try {
     console.log('Starting domain analysis for:', domain)
-    
+
     // Perform domain analysis directly (copied from rating-api)
     const analysis = await performDomainAnalysis(domain)
 
@@ -199,7 +200,7 @@ async function analyzeSingleDomain(domain: string, supabase: any) {
     const { data: upsertResult, error: upsertError } = await supabase
       .rpc('upsert_domain_cache_safe', {
         p_domain: domain,
-        p_domain_age_days: analysis.domainAge,
+        p_domain_age_days: Math.floor(analysis.domainAge), // Ensure integer for int4 column
         p_whois_data: analysis.whoisData || null,
         p_http_status: analysis.httpStatus,
         p_ssl_valid: analysis.sslValid,
@@ -212,7 +213,7 @@ async function analyzeSingleDomain(domain: string, supabase: any) {
       console.error('Error caching domain data using safe upsert:', upsertError)
       throw new Error(`Failed to cache domain analysis: ${upsertError.message}`)
     }
-    
+
     if (!upsertResult) {
       console.warn(`Domain cache upsert returned false for ${domain}`)
     }
@@ -236,8 +237,8 @@ async function performDomainAnalysis(domain: string) {
     // 1. HTTP Status and SSL Check
     await checkHttpAndSsl(domain, result)
 
-    // 2. Domain Age (heuristic)
-    result.domainAge = getDomainAge(domain)
+    // 2. Domain Age and WHOIS Data
+    await getDomainAgeAndWhois(domain, result)
 
     // 3. Google Safe Browsing
     if (googleApiKey) {
@@ -414,35 +415,171 @@ async function checkHybridAnalysis(domain: string, result: any) {
 }
 
 function calculateThreatScore(result: any): number {
-    let threatScore = 0
-    let totalChecks = 0
+  let threatScore = 0
+  let totalChecks = 0
 
-    if (result.googleSafeBrowsingStatus) {
-        totalChecks++
-        switch (result.googleSafeBrowsingStatus) {
-            case 'malware': threatScore += 60; break
-            case 'phishing': threatScore += 55; break
-            case 'unwanted': threatScore += 40; break
-            case 'safe': threatScore += 0; break
+  if (result.googleSafeBrowsingStatus) {
+    totalChecks++
+    switch (result.googleSafeBrowsingStatus) {
+      case 'malware': threatScore += 60; break
+      case 'phishing': threatScore += 55; break
+      case 'unwanted': threatScore += 40; break
+      case 'safe': threatScore += 0; break
+    }
+  }
+
+  if (result.hybridAnalysisStatus) {
+    totalChecks++
+    switch (result.hybridAnalysisStatus) {
+      case 'malicious': threatScore += 40; break
+      case 'suspicious': threatScore += 25; break
+      case 'clean': threatScore += 0; break
+    }
+  }
+
+  return totalChecks > 0 ? Math.round(threatScore / totalChecks) : 0
+}
+
+// WHOIS lookup functions
+async function getDomainAgeAndWhois(domain: string, result: any) {
+  // Try real WHOIS lookup first if API key is available
+  if (whoisApiKey) {
+    try {
+      const whoisData = await performWhoisLookup(domain)
+      if (whoisData && whoisData.creationDate) {
+        // Calculate real domain age from creation date with safety checks
+        const creationDate = new Date(whoisData.creationDate)
+
+        // Validate the parsed date
+        if (isNaN(creationDate.getTime())) {
+          throw new Error(`Invalid creation date format: ${whoisData.creationDate}`)
         }
+
+        const now = new Date()
+        const ageInDays = Math.floor((now.getTime() - creationDate.getTime()) / (1000 * 60 * 60 * 24))
+
+        // Sanity check: domain age should be positive and reasonable (not future, not older than internet)
+        if (ageInDays < 0) {
+          throw new Error(`Domain creation date is in the future: ${whoisData.creationDate}`)
+        }
+        if (ageInDays > 15000) { // ~41 years, older than the internet
+          throw new Error(`Domain age seems unrealistic: ${ageInDays} days (${whoisData.creationDate})`)
+        }
+
+        // Store the WHOIS-derived age in domainAge (this goes to domain_age_days column)
+        result.domainAge = ageInDays
+
+        // Store complete WHOIS data with the same age for consistency
+        result.whoisData = JSON.stringify({
+          domain: domain,
+          method: 'whois_api',
+          creation_date: whoisData.creationDate,
+          registrar: whoisData.registrar || 'unknown',
+          expiry_date: whoisData.expiryDate || null,
+          actual_age_days: ageInDays, // Same value as domainAge for consistency
+          analysis_date: new Date().toISOString(),
+          raw_whois: whoisData
+        })
+
+        console.log(`Real WHOIS data retrieved for ${domain}: ${ageInDays} days old (stored in both domain_age_days and whois_data)`)
+        return
+      }
+    } catch (error) {
+      console.warn(`WHOIS lookup failed for ${domain}, falling back to heuristic:`, error.message)
+    }
+  }
+
+  // Fallback to heuristic method
+  const heuristicAge = getDomainAge(domain)
+  result.domainAge = heuristicAge
+
+  // Store heuristic data with clear indication of method
+  result.whoisData = JSON.stringify({
+    domain: domain,
+    method: 'heuristic',
+    estimated_age_days: heuristicAge, // Same value as domainAge for consistency
+    analysis_date: new Date().toISOString(),
+    note: 'Domain age calculated using heuristic method (WHOIS API not available or failed)'
+  })
+
+  console.log(`Heuristic domain age for ${domain}: ${heuristicAge} days (stored in both domain_age_days and whois_data)`)
+}
+
+async function performWhoisLookup(domain: string) {
+  try {
+    const response = await fetch(`https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${whoisApiKey}&domainName=${domain}&outputFormat=JSON`, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'URL-Rating-Extension/1.0'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`WHOIS API returned ${response.status}`)
     }
 
-    if (result.hybridAnalysisStatus) {
-        totalChecks++
-        switch (result.hybridAnalysisStatus) {
-            case 'malicious': threatScore += 40; break
-            case 'suspicious': threatScore += 25; break
-            case 'clean': threatScore += 0; break
+    const data = await response.json()
+
+    if (data.WhoisRecord) {
+      const record = data.WhoisRecord
+
+      // Try multiple possible locations for creation date
+      let creationDate = null
+      let expiryDate = null
+      let registrar = null
+
+      // Primary: Direct from WhoisRecord (as shown in your example)
+      if (record.createdDate) {
+        creationDate = record.createdDate
+      }
+      // Fallback: From registryData (previous format)
+      else if (record.registryData && record.registryData.createdDate) {
+        creationDate = record.registryData.createdDate
+      }
+      // Additional fallback: Normalized dates
+      else if (record.registryData && record.registryData.createdDateNormalized) {
+        creationDate = record.registryData.createdDateNormalized
+      }
+
+      // Same logic for expiry date
+      if (record.expiresDate) {
+        expiryDate = record.expiresDate
+      } else if (record.registryData && record.registryData.expiresDate) {
+        expiryDate = record.registryData.expiresDate
+      } else if (record.registryData && record.registryData.expiresDateNormalized) {
+        expiryDate = record.registryData.expiresDateNormalized
+      }
+
+      // Registrar info
+      if (record.registrarName) {
+        registrar = record.registrarName
+      } else if (record.registryData && record.registryData.registrarName) {
+        registrar = record.registryData.registrarName
+      }
+
+      // Only return data if we found a creation date
+      if (creationDate) {
+        return {
+          creationDate,
+          expiryDate,
+          registrar,
+          status: record.registryData?.status || record.status,
+          nameServers: record.registryData?.nameServers || record.nameServers
         }
+      }
     }
 
-    return totalChecks > 0 ? Math.round(threatScore / totalChecks) : 0
+    return null
+  } catch (error) {
+    console.error(`WHOIS lookup error for ${domain}:`, error)
+    throw error
+  }
 }
 
 // Route handlers
 const handlers = {
-    handleBatchDomainAnalysis,
-    handleCors: (req: Request) => new Response('ok', { headers: corsHeaders })
+  handleBatchDomainAnalysis,
+  handleCors: (req: Request) => new Response('ok', { headers: corsHeaders })
 }
 
 // Create and export the router

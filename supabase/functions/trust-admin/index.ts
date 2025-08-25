@@ -301,7 +301,7 @@ async function handleAnalyzeDomain(req: Request, supabase: any) {
     // Store in cache
     const cacheData = {
       domain,
-      domain_age_days: analysis.domainAge,
+      domain_age_days: Math.floor(analysis.domainAge), // Ensure integer for int4 column
       whois_data: analysis.whoisData || null,
       http_status: analysis.httpStatus,
       ssl_valid: analysis.sslValid,
@@ -351,6 +351,15 @@ async function performDomainAnalysis(domain: string) {
 
     // 2. Domain Age (heuristic)
     result.domainAge = getDomainAge(domain)
+    
+    // 2.1. Create WHOIS data structure (heuristic-based for now)
+    result.whoisData = JSON.stringify({
+      domain: domain,
+      method: 'heuristic',
+      estimated_age_days: result.domainAge,
+      analysis_date: new Date().toISOString(),
+      note: 'Domain age calculated using heuristic method based on known domain patterns'
+    })
 
     // 3. Google Safe Browsing
     if (googleApiKey) {
