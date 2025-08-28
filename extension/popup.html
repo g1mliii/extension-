@@ -36,59 +36,50 @@
     </div>
 
     <!-- Clean Logout Button for Logged In State -->
-    <button id="logout-btn" class="clean-logout-btn" style="display: none;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16,17 21,12 16,7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
+    <button id="logout-btn" class="clean-logout-btn" style="display: none;" title="Logout">
+        LOGOUT
     </button>
 
-    <!-- Trust Score Layout: Circle + Grid -->
+    <!-- Trust Score Layout: Clean Centered Design -->
     <div class="trust-score-layout" id="trust-score-section">
-        <div class="score-main-row">
-            <!-- Trust Score Circle with tiny refresh button -->
-            <div class="score-circle-section">
-                <div class="score-circle-container">
-                    <!-- Circular Progress Bar SVG -->
-                    <svg class="circular-progress" viewBox="0 0 100 100">
-                        <circle class="progress-ring progress-ring-bg" cx="50" cy="50" r="45"/>
-                        <circle class="progress-ring progress-ring-fill" cx="50" cy="50" r="45" id="progress-ring"/>
-                    </svg>
-                    <div class="score-circle" id="score-circle">
-                        <div class="score-display">
-                            <div class="score-number" id="trust-score">N/A</div>
-                            <div class="score-label">Trust Score</div>
-                        </div>
-                    </div>
-                </div>
-                <button id="refresh-stats-btn" class="refresh-btn-tiny">↻</button>
-            </div>
-            
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-value" id="total-ratings">N/A</div>
-                    <div class="stat-label">Ratings</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="spam-count">0</div>
-                    <div class="stat-label">Spam Reports</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="misleading-count">0</div>
-                    <div class="stat-label">Misleading</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="scam-count">0</div>
-                    <div class="stat-label">Scam Reports</div>
-                </div>
-            </div>
+        <!-- Trust Score Header with Tooltip -->
+        <div class="trust-score-header">
+            <button class="trust-score-tooltip-btn" id="trust-score-tooltip-btn">?</button>
         </div>
         
-        <!-- URL Box (moved from below rating section) -->
+        <!-- Centered Trust Score Circle - Larger -->
+        <div class="score-center-section">
+            <div class="score-circle-container-large">
+                <!-- Circular Progress Bar SVG - Larger -->
+                <svg class="circular-progress-large" viewBox="0 0 100 100">
+                    <circle class="progress-ring progress-ring-bg" cx="50" cy="50" r="45"/>
+                    <circle class="progress-ring progress-ring-fill" cx="50" cy="50" r="45" id="progress-ring"/>
+                </svg>
+                <div class="score-circle-large" id="score-circle">
+                    <div class="score-display">
+                        <div class="score-number-large" id="trust-score">N/A</div>
+                        <div class="score-label">Trust Score</div>
+                        <div class="score-subtitle">Based on community ratings</div>
+                    </div>
+                </div>
+            </div>
+            
+
+        </div>
+        
+        <!-- Warning Indicators Container (will be injected by WarningIndicatorSystem) -->
+        
+        <!-- URL Box -->
         <div class="url-display-box">
             <span id="current-url">Loading...</span>
+        </div>
+        
+        <!-- Hidden elements for data access (keep for JS compatibility) -->
+        <div style="display: none;">
+            <span id="total-ratings">N/A</span>
+            <span id="spam-count">0</span>
+            <span id="misleading-count">0</span>
+            <span id="scam-count">0</span>
         </div>
     </div>
 
@@ -110,42 +101,43 @@
             </div>
         </div>
 
-        <div id="rating-section" style="display: none;">
-            <h2>Submit Your Rating & Report</h2>
-            
-            <div class="rating-form">
-                <div class="rating-input">
-                    <label for="rating-score">Rate this URL (1-5 stars):</label>
-                    <select id="rating-score">
-                        <option value="1">⭐ 1 - Very Poor</option>
-                        <option value="2">⭐⭐ 2 - Poor</option>
-                        <option value="3">⭐⭐⭐ 3 - Average</option>
-                        <option value="4">⭐⭐⭐⭐ 4 - Good</option>
-                        <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
-                    </select>
-                </div>
-
-                <div class="report-options">
-                    <div class="report-title">Report Issues (optional):</div>
-                    <label class="report-checkbox">
-                        <input type="checkbox" id="is-spam">
-                        <span class="checkmark"></span>
-                        Report as Spam
-                    </label>
-                    <label class="report-checkbox">
-                        <input type="checkbox" id="is-misleading">
-                        <span class="checkmark"></span>
-                        Report as Misleading
-                    </label>
-                    <label class="report-checkbox">
-                        <input type="checkbox" id="is-scam">
-                        <span class="checkmark"></span>
-                        Report as Scam
-                    </label>
-                </div>
-                
-                <button id="submit-rating-btn" class="submit-btn">Submit Rating</button>
+        <!-- Ultra Compact Rating Interface -->
+        <div id="rating-section" class="ultra-compact-rating" style="display: none;">
+            <!-- Rating Guide Button -->
+            <div class="rating-guide-container">
+                <button class="rating-guide-btn" id="rating-guide-btn">?</button>
             </div>
+            
+            <!-- Star Rating System - Main Focus with More Space -->
+            <div class="ultra-compact-stars-expanded" id="compact-star-rating">
+                <button class="ultra-star-expanded" data-rating="1" title="1 star - Very Poor">★</button>
+                <button class="ultra-star-expanded" data-rating="2" title="2 stars - Poor">★</button>
+                <button class="ultra-star-expanded" data-rating="3" title="3 stars - Average">★</button>
+                <button class="ultra-star-expanded" data-rating="4" title="4 stars - Good">★</button>
+                <button class="ultra-star-expanded" data-rating="5" title="5 stars - Excellent">★</button>
+            </div>
+            
+            <!-- Professional Quality Issue Controls -->
+            <div class="ultra-compact-flags">
+                <button class="ultra-flag-btn" data-flag="spam" title="Report spam or excessive ads">Spam/Ads</button>
+                <button class="ultra-flag-btn" data-flag="misleading" title="Report misleading information">Misleading</button>
+                <button class="ultra-flag-btn" data-flag="scam" title="Report suspicious activity">Suspicious</button>
+            </div>
+            
+            <!-- Submit button removed - double-tap stars to submit -->
+            
+            <!-- Hidden inputs for compatibility with existing JS -->
+            <select id="rating-score" style="display: none;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <input type="checkbox" id="is-spam" style="display: none;">
+            <input type="checkbox" id="is-misleading" style="display: none;">
+            <input type="checkbox" id="is-scam" style="display: none;">
+            <button id="submit-rating-btn" style="display: none;"></button>
         </div>
 
 

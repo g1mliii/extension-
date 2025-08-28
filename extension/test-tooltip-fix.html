@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tooltip Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            margin: 5px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #357abd;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+    </style>
+</head>
+<body>
+    <h1>Tooltip Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual Tests</h2>
+        <p>1. Load the extension popup</p>
+        <p>2. Check that only TWO tooltips appear:</p>
+        <ul>
+            <li>✅ Trust Score "?" button tooltip (custom modal)</li>
+            <li>✅ Rating Guide "?" button tooltip (custom modal)</li>
+        </ul>
+        <p>3. Verify NO native browser tooltips appear on hover</p>
+        <p>4. Verify NO "refresh" related tooltips or errors</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Expected Behavior</h2>
+        <div class="status info">
+            <strong>Before Fix:</strong>
+            <ul>
+                <li>❌ Three tooltips: Trust score (correct), Rating guide (correct), Native browser tooltip (error)</li>
+                <li>❌ Native tooltip shows "Trust Score Details" on hover</li>
+                <li>❌ Possible JavaScript errors related to refresh functionality</li>
+            </ul>
+        </div>
+        <div class="status success">
+            <strong>After Fix:</strong>
+            <ul>
+                <li>✅ Two tooltips only: Trust score modal and Rating guide modal</li>
+                <li>✅ No native browser tooltips on hover</li>
+                <li>✅ No refresh-related errors</li>
+                <li>✅ Clean tooltip system with proper event handling</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Test results
+        const results = document.getElementById('test-results');
+        
+        function addResult(test, status, message) {
+            const div = document.createElement('div');
+            div.className = `status ${status}`;
+            div.innerHTML = `<strong>${test}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+        
+        // Check if we're in extension context
+        if (typeof chrome !== 'undefined' && chrome.extension) {
+            addResult('Extension Context', 'success', 'Running in extension context');
+        } else {
+            addResult('Extension Context', 'info', 'Running in regular browser (expected for this test)');
+        }
+        
+        // Check for title attributes that could cause native tooltips
+        const elementsWithTitle = document.querySelectorAll('[title]');
+        if (elementsWithTitle.length === 0) {
+            addResult('Title Attributes', 'success', 'No problematic title attributes found in this test page');
+        } else {
+            addResult('Title Attributes', 'info', `Found ${elementsWithTitle.length} elements with title attributes (normal for this test page)`);
+        }
+        
+        addResult('Test Status', 'info', 'Manual testing required - load the extension popup to verify tooltip behavior');
+    </script>
+</body>
+</html>

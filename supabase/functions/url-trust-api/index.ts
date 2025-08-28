@@ -129,16 +129,11 @@ async function handleGetUrlStats(req: Request, _route: RouteConfig, _requestId: 
         // Try URL-specific stats first
         let stats = await getUrlStats(supabase, urlHash, validatedUrl)
 
-        // Only extract domain if we don't have stats (avoid redundant extraction)
+        // If no URL-specific stats, create baseline stats (no domain fallback)
+        // Each URL should have its own independent ratings
         if (!stats) {
             const domain = extractDomain(validatedUrl)
-            const domainStats = await getDomainStats(supabase, domain)
-            stats = mergeDomainStats(stats, domainStats, domain)
-            
-            // Apply baseline scoring only if no data available at all
-            if (!stats) {
-                stats = createBaselineStats(validatedUrl, domain)
-            }
+            stats = createBaselineStats(validatedUrl, domain)
         }
 
         return new Response(
@@ -397,42 +392,8 @@ async function getUrlStats(supabase: any, urlHash: string, url?: string) {
     }
 }
 
-async function getDomainStats(supabase: any, domain: string) {
-    try {
-        const { data, error } = await supabase
-            .from('url_stats')
-            .select('*')
-            .eq('domain', domain)
-            .order('rating_count', { ascending: false })
-            .limit(1)
-            .single()
-
-        if (error) {
-            if (error.code === 'PGRST116') {
-                // No rows found - this is expected for new domains
-                return null
-            } else {
-                console.error('Error fetching domain stats:', error.message)
-                return null
-            }
-        }
-
-        return data
-    } catch (error) {
-        console.error('Exception fetching domain stats:', error.message)
-        return null
-    }
-}
-
-function mergeDomainStats(urlStats: any, domainStats: any, _domain: string) {
-    if (!domainStats) return urlStats
-
-    return {
-        ...domainStats,
-        data_source: 'domain',
-        cache_status: 'fresh'
-    }
-}
+// Removed getDomainStats and mergeDomainStats functions
+// Each URL should have independent ratings, no domain-level fallback
 
 function createBaselineStats(url: string, domain: string) {
     const baselineScore = calculateDomainBaseline(domain)
@@ -446,13 +407,13 @@ function createBaselineStats(url: string, domain: string) {
         domain_trust_score: baselineScore,
         community_trust_score: null,
         content_type: 'unknown',
-        rating_count: 0,
-        average_rating: null,
+        rating_count: 0,  // This should be 0 for new URLs
+        average_rating: null,  // This should be null for new URLs
         spam_reports_count: 0,
         misleading_reports_count: 0,
         scam_reports_count: 0,
         last_updated: null,
-        data_source: 'baseline',
+        data_source: 'baseline',  // Indicates this is a new URL with no ratings
         cache_status: 'none'
     }
 }

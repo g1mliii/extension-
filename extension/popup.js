@@ -2,6 +2,12 @@
 
 import { supabase, initSupabase, signIn, signUp, signOut, getSession, getUser, resendConfirmation, resetPassword } from './auth.js';
 import { CONFIG } from './config.js';
+import { buttonStateManager } from './button-state-manager.js';
+import { notificationManager } from './notification-manager.js';
+import { trustScoreTooltip } from './trust-score-tooltip.js';
+import { compactRatingManager } from './compact-rating-manager.js';
+import { localScoreCalculator } from './local-score-calculator.js';
+import { warningIndicatorSystem } from './warning-indicator-system.js';
 
 // --- DOM Elements ---
 const authSection = document.getElementById('auth-section');
@@ -13,7 +19,7 @@ const loginBtn = document.getElementById('login-btn');
 const signupBtn = document.getElementById('signup-btn');
 const forgotPasswordBtn = document.getElementById('forgot-password-btn');
 const resendBtn = document.getElementById('resend-btn');
-const refreshStatsBtn = document.getElementById('refresh-stats-btn');
+const trustScoreTooltipBtn = document.getElementById('trust-score-tooltip-btn');
 const logoutBtn = document.getElementById('logout-btn');
 
 const ratingSection = document.getElementById('rating-section');
@@ -24,6 +30,8 @@ const spamCountSpan = document.getElementById('spam-count'); // New
 const misleadingCountSpan = document.getElementById('misleading-count'); // New
 const scamCountSpan = document.getElementById('scam-count'); // New
 
+// Summary elements removed - keeping focus on trust score only
+
 const ratingScoreSelect = document.getElementById('rating-score');
 const isSpamCheckbox = document.getElementById('is-spam'); // New
 const isMisleadingCheckbox = document.getElementById('is-misleading'); // New
@@ -33,62 +41,75 @@ const submitRatingBtn = document.getElementById('submit-rating-btn');
 
 let currentUrl = ''; // To store the URL of the active tab
 
-// --- Utility Function to Display Messages ---
-function showMessage(text, type = 'info') {
+// Make notificationManager globally available for other modules
+window.notificationManager = notificationManager;
+
+// Make localScoreCalculator globally available for testing
+window.localScoreCalculator = localScoreCalculator;
+
+// Make warningIndicatorSystem globally available for testing
+window.warningIndicatorSystem = warningIndicatorSystem;
+
+// Make currentUrl globally accessible for other modules
+window.getCurrentUrl = () => currentUrl;
+
+// --- Enhanced Utility Function to Display Messages ---
+let lastNotificationTime = 0;
+let lastNotificationText = '';
+const NOTIFICATION_THROTTLE_MS = 3000; // Prevent duplicate notifications within 3 seconds
+let activeNotificationId = null;
+
+function showMessage(text, type = 'info', options = {}) {
     console.log(`${type.toUpperCase()}: ${text}`);
-
-    const messageBar = document.getElementById('message-bar');
-    const messageContent = document.getElementById('message-content');
-    const messageClose = document.getElementById('message-close');
-
-    if (!messageBar || !messageContent) {
-        console.warn('Message bar elements not found');
-        return;
+    
+    // Throttle duplicate notifications more aggressively
+    const now = Date.now();
+    if (text === lastNotificationText && (now - lastNotificationTime) < NOTIFICATION_THROTTLE_MS) {
+        console.log('Notification throttled (duplicate):', text);
+        return activeNotificationId;
     }
-
-    // If same message is already showing, don't spam
-    if (messageContent.textContent === text && messageBar.classList.contains('show')) {
-        console.log('Same message already showing, skipping duplicate');
-        return;
+    
+    // Skip certain low-priority notifications
+    const skipPatterns = [
+        /^Trust score loaded successfully\.$/,  // Skip success for cached data
+        /^Loading trust score\.\.\.$/,          // Skip loading for batched requests
+        /^Submitting rating\.\.\.$/,            // Skip submitting for compact interface
+        /^Rating is being processed\.\.\.$/,    // Skip processing messages
+        /^Logging in\.\.\.$/,                   // Skip login loading
+        /^Logging out\.\.\.$/,                  // Skip logout loading
+        /^Creating your account\.\.\.$/         // Skip signup loading
+    ];
+    
+    // Only skip if it's a low-priority notification and not forced
+    if (!options.force && skipPatterns.some(pattern => pattern.test(text))) {
+        // Allow loading messages only if no recent notification
+        if (text.includes('Loading') && (now - lastNotificationTime) < 1500) {
+            console.log('Notification skipped (low priority):', text);
+            return activeNotificationId;
+        }
     }
-
-    // Clear existing classes and hide
-    messageBar.className = 'message-bar hidden';
-
-    // Set content and type
-    messageContent.textContent = text;
-
-    // Add type class and show
-    setTimeout(() => {
-        messageBar.className = `message-bar ${type} show`;
-    }, 10);
-
-    // Auto-hide after delay (longer for errors, shorter for success)
-    const hideDelay = type === 'error' ? 6000 : type === 'success' ? 4000 : 3000;
-
-    // Clear any existing timeout
-    if (window.messageTimeout) {
-        clearTimeout(window.messageTimeout);
+    
+    // Clear any existing notification if showing a new one
+    if (activeNotificationId && type !== 'info') {
+        notificationManager.hideNotification(true);
     }
-
-    window.messageTimeout = setTimeout(() => {
-        hideMessage();
-    }, hideDelay);
+    
+    lastNotificationTime = now;
+    lastNotificationText = text;
+    
+    // Use enhanced notification manager
+    activeNotificationId = notificationManager.show(text, type, {
+        showProgress: true,
+        duration: type === 'success' ? 2000 : undefined, // Shorter success messages
+        ...options
+    });
+    
+    return activeNotificationId;
 }
 
 function hideMessage() {
-    const messageBar = document.getElementById('message-bar');
-    if (messageBar) {
-        messageBar.classList.remove('show');
-        setTimeout(() => {
-            messageBar.classList.add('hidden');
-        }, 400); // Match CSS transition duration
-    }
-
-    if (window.messageTimeout) {
-        clearTimeout(window.messageTimeout);
-        window.messageTimeout = null;
-    }
+    // Use enhanced notification manager
+    notificationManager.hideNotification(true);
 }
 
 // --- Helper Functions for Stats Display ---
@@ -111,11 +132,26 @@ function updateStatsDisplay(data) {
     // Update the circular progress score
     trustScoreSpan.textContent = `${trustScore.toFixed(0)}%`;
     updateScoreBar(trustScore);
+    
+    // Update trust score tooltip
+    trustScoreTooltip.updateScore(trustScore, data);
+    
+    // Update compact rating manager with current trust score
+    compactRatingManager.onTrustScoreUpdate(trustScore, data);
+    
+    // Update local score calculator with current data
+    localScoreCalculator.updateCurrentScore(trustScore, data);
+    
+    // Update warning indicator system with current data
+    warningIndicatorSystem.updateWarnings(trustScore, data);
 
+    // Update hidden elements for data access (keep for compatibility)
     totalRatingsSpan.textContent = data.rating_count || '0';
     spamCountSpan.textContent = data.spam_reports_count || '0';
     misleadingCountSpan.textContent = data.misleading_reports_count || '0';
     scamCountSpan.textContent = data.scam_reports_count || '0';
+    
+    // Summary elements removed - keeping focus on trust score only
 
     // Add data source indicator (subtle)
     if (data.data_source) {
@@ -144,16 +180,16 @@ function updateScoreBar(score) {
         // For 100%, offset = 0 (full fill)
         const offset = circumference - (percentage / 100) * circumference;
 
-        // Determine color based on score
+        // Determine color based on score (updated thresholds)
         let strokeColor;
-        if (score >= 80) {
-            strokeColor = '#34D399'; // Green for excellent
-        } else if (score >= 60) {
-            strokeColor = '#93C5FD'; // Blue for good
-        } else if (score >= 40) {
-            strokeColor = '#FBBF24'; // Yellow for fair
+        if (score >= 75) {
+            strokeColor = '#34D399'; // Green for 75%+ (good/excellent)
+        } else if (score >= 50) {
+            strokeColor = '#93C5FD'; // Blue for 50-74% (fair/good)
+        } else if (score >= 25) {
+            strokeColor = '#FBBF24'; // Yellow for 25-49% (poor/fair)
         } else if (score > 0) {
-            strokeColor = '#F87171'; // Red for poor
+            strokeColor = '#F87171'; // Red for 1-24% (very poor)
         } else {
             strokeColor = 'rgba(255, 255, 255, 0.2)'; // Gray for unknown
         }
@@ -220,7 +256,16 @@ function clearStatsDisplay() {
     spamCountSpan.textContent = '0';
     misleadingCountSpan.textContent = '0';
     scamCountSpan.textContent = '0';
+    
+    // Summary elements removed - keeping focus on trust score only
+    
     updateScoreBar(baselineScore);
+    
+    // Update trust score tooltip with baseline
+    trustScoreTooltip.updateScore(baselineScore, { data_source: 'baseline', domain: extractDomainFromCurrentUrl() });
+    
+    // Clear warning indicators
+    warningIndicatorSystem.updateWarnings(baselineScore, { rating_count: 0, spam_reports_count: 0, misleading_reports_count: 0, scam_reports_count: 0 });
 }
 
 function extractDomainFromCurrentUrl() {
@@ -278,7 +323,7 @@ async function fetchUrlStatsBatched(url) {
 
 // Single URL fetch (extracted from main function)
 async function fetchUrlStatsSingle(url) {
-    showMessage('Loading trust score...', 'info');
+    // Loading message handled by batch system or main function
 
     let session = null;
     try {
@@ -351,7 +396,7 @@ async function fetchUrlStatsSingle(url) {
             if (response.status === 406) {
                 console.warn('406 Not Acceptable in batch request - using fallback');
                 clearStatsDisplay();
-                showMessage('Loading trust score...', 'info');
+                // Skip loading message for fallback to reduce noise
                 return; // Don't throw error for 406
             }
 
@@ -392,7 +437,7 @@ async function fetchUrlStatsSingle(url) {
         saveCacheToStorage(url, cacheData);
 
         updateStatsDisplay(data);
-        showMessage('Trust score loaded successfully.', 'success');
+        // Single fetch doesn't show success messages to reduce noise
     } catch (error) {
         clearTimeout(timeoutId);
 
@@ -417,6 +462,9 @@ function updateUI(session) {
         if (authSection) authSection.className = 'hidden';
         if (headerLogin) headerLogin.style.display = 'none';
         if (ratingSection) ratingSection.style.display = 'block';
+        
+        // Initialize compact rating manager now that elements are visible
+        compactRatingManager.forceInit();
 
         // Show user info in rating section
         if (authStatusDiv) {
@@ -464,11 +512,14 @@ loginBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Disable buttons and show loading
-    loginBtn.disabled = true;
+    // Set loading state for login button
+    buttonStateManager.setState(loginBtn, 'loading', {
+        loadingText: 'Logging in...'
+    });
+    
+    // Disable signup button during login
     signupBtn.disabled = true;
-    loginBtn.textContent = 'Logging in...';
-    showMessage('Logging in...', 'info');
+    // Button state shows loading - no notification needed
 
     try {
         const { user, session, error } = await signIn(email, password);
@@ -476,21 +527,31 @@ loginBtn.addEventListener('click', async () => {
             if (error.message.includes('Email not confirmed')) {
                 showMessage('Please check your email and click the confirmation link before logging in.', 'error');
                 resendBtn.style.display = 'inline-block';
+                buttonStateManager.setState(loginBtn, 'error', {
+                    errorText: 'Email not confirmed',
+                    duration: 3000
+                });
             } else {
                 showMessage(`Login failed: ${error.message}`, 'error');
+                buttonStateManager.setState(loginBtn, 'error', {
+                    errorText: 'Login failed',
+                    duration: 3000
+                });
             }
             console.error('Login error:', error);
         } else {
             showMessage('Login successful!', 'success');
             resendBtn.style.display = 'none'; // Hide resend button on successful login
+            buttonStateManager.setState(loginBtn, 'success', {
+                successText: 'Login successful!',
+                duration: 2000
+            });
             updateUI(session);
             // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
         }
     } finally {
-        // Re-enable buttons
-        loginBtn.disabled = false;
+        // Re-enable signup button
         signupBtn.disabled = false;
-        loginBtn.textContent = 'Login';
     }
 });
 
@@ -502,26 +563,41 @@ signupBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Disable buttons and show loading
+    // Set loading state for signup button
+    buttonStateManager.setState(signupBtn, 'loading', {
+        loadingText: 'Creating account...'
+    });
+    
+    // Disable login button during signup
     loginBtn.disabled = true;
-    signupBtn.disabled = true;
-    signupBtn.textContent = 'Creating account...';
-    showMessage('Creating your account...', 'info');
+    // Button state shows loading - no notification needed
 
     try {
         const { user, session, error } = await signUp(email, password);
         if (error) {
             showMessage(`Sign up failed: ${error.message}`, 'error');
+            buttonStateManager.setState(signupBtn, 'error', {
+                errorText: 'Sign up failed',
+                duration: 3000
+            });
             console.error('Sign up error:', error);
         } else {
             if (session) {
                 // User is immediately logged in (email already confirmed)
                 showMessage('Account created and logged in successfully!', 'success');
+                buttonStateManager.setState(signupBtn, 'success', {
+                    successText: 'Account created!',
+                    duration: 2000
+                });
                 updateUI(session);
                 // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
             } else {
                 // Email confirmation required
                 showMessage('Account created! Check your email for a confirmation link. After clicking it, return here to log in.', 'success');
+                buttonStateManager.setState(signupBtn, 'success', {
+                    successText: 'Check your email',
+                    duration: 4000
+                });
                 // Show resend button
                 resendBtn.style.display = 'inline-block';
                 // Clear the password field for security
@@ -529,10 +605,8 @@ signupBtn.addEventListener('click', async () => {
             }
         }
     } finally {
-        // Re-enable buttons
+        // Re-enable login button
         loginBtn.disabled = false;
-        signupBtn.disabled = false;
-        signupBtn.textContent = 'Sign Up';
     }
 });
 
@@ -543,19 +617,30 @@ resendBtn.addEventListener('click', async () => {
         return;
     }
 
-    resendBtn.disabled = true;
-    resendBtn.textContent = 'Sending...';
+    buttonStateManager.setState(resendBtn, 'loading', {
+        loadingText: 'Sending...'
+    });
 
     try {
         const { error } = await resendConfirmation(email);
         if (error) {
             showMessage(`Failed to resend: ${error.message}`, 'error');
+            buttonStateManager.setState(resendBtn, 'error', {
+                errorText: 'Failed to send',
+                duration: 3000
+            });
         } else {
             showMessage('Confirmation email sent! Please check your inbox.', 'success');
+            buttonStateManager.setState(resendBtn, 'success', {
+                successText: 'Email sent!',
+                duration: 3000
+            });
         }
-    } finally {
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Resend Confirmation Email';
+    } catch (error) {
+        buttonStateManager.setState(resendBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
     }
 });
 
@@ -566,26 +651,34 @@ forgotPasswordBtn.addEventListener('click', async () => {
         return;
     }
 
-    forgotPasswordBtn.disabled = true;
-    forgotPasswordBtn.textContent = 'Sending...';
+    buttonStateManager.setState(forgotPasswordBtn, 'loading', {
+        loadingText: 'Sending...'
+    });
 
     try {
         const { error } = await resetPassword(email);
         if (error) {
             showMessage(`Failed to send reset email: ${error.message}`, 'error');
+            buttonStateManager.setState(forgotPasswordBtn, 'error', {
+                errorText: 'Failed to send',
+                duration: 3000
+            });
         } else {
             showMessage('Password reset email sent! Check your inbox.', 'success');
+            buttonStateManager.setState(forgotPasswordBtn, 'success', {
+                successText: 'Email sent!',
+                duration: 3000
+            });
         }
-    } finally {
-        forgotPasswordBtn.disabled = false;
-        forgotPasswordBtn.textContent = 'Forgot Password?';
+    } catch (error) {
+        buttonStateManager.setState(forgotPasswordBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
     }
 });
 
-// Cooldown tracking for refresh button
-let lastRefreshTime = 0;
-let cooldownTimer = null;
-const REFRESH_COOLDOWN_MS = 10000; // 10 seconds cooldown
+// Refresh button removed - functionality integrated into tooltip button
 
 // Smart caching to reduce API calls
 let statsCache = new Map(); // url -> {data, timestamp}
@@ -642,72 +735,10 @@ function cleanupOldCacheEntries() {
     }
 }
 
-function startRefreshCooldown() {
-    const startTime = Date.now();
 
-    const updateCooldown = () => {
-        const elapsed = Date.now() - startTime;
-        const remaining = REFRESH_COOLDOWN_MS - elapsed;
 
-        if (remaining <= 0) {
-            refreshStatsBtn.disabled = false;
-            refreshStatsBtn.textContent = '🔄 Refresh Stats';
-            if (cooldownTimer) {
-                clearInterval(cooldownTimer);
-                cooldownTimer = null;
-            }
-            return;
-        }
-
-        const remainingSeconds = Math.ceil(remaining / 1000);
-        refreshStatsBtn.textContent = `⏱️ Wait ${remainingSeconds}s`;
-        refreshStatsBtn.disabled = true;
-    };
-
-    updateCooldown();
-    cooldownTimer = setInterval(updateCooldown, 1000);
-}
-
-refreshStatsBtn.addEventListener('click', async () => {
-    if (!currentUrl) {
-        showMessage('No URL to refresh stats for.', 'error');
-        return;
-    }
-
-    // Check if already in cooldown
-    if (refreshStatsBtn.disabled && refreshStatsBtn.textContent.includes('Wait')) {
-        showMessage('Refresh is on cooldown to prevent spam.', 'error');
-        return;
-    }
-
-    // Check cooldown
-    const now = Date.now();
-    const timeSinceLastRefresh = now - lastRefreshTime;
-
-    if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
-        const remainingSeconds = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
-        showMessage(`Please wait ${remainingSeconds} seconds before refreshing again.`, 'error');
-        startRefreshCooldown();
-        return;
-    }
-
-    refreshStatsBtn.disabled = true;
-    refreshStatsBtn.textContent = '🔄 Refreshing...';
-    lastRefreshTime = now;
-
-    try {
-        await fetchUrlStats(currentUrl, true); // Force refresh bypasses cache
-
-        // Start cooldown after successful refresh
-        startRefreshCooldown();
-    } catch (error) {
-        showMessage('Failed to refresh stats.', 'error');
-        console.error('Refresh error:', error);
-
-        // Still start cooldown even on error to prevent spam
-        startRefreshCooldown();
-    }
-});
+// Trust score tooltip button is handled by the TrustScoreTooltip class itself
+// No additional event listener needed here
 
 // Logout button event listeners removed
 
@@ -740,7 +771,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION_MS) {
                 console.log('Using cached stats for', url);
                 updateStatsDisplay(cached.data);
-                showMessage('Trust score loaded successfully.', 'success');
+                // Skip notification for cached data to reduce noise
                 isLoadingStats = false;
                 return;
             } else if (cached) {
@@ -757,7 +788,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
             return result;
         }
 
-        showMessage('Loading trust score...', 'info');
+        // Loading is shown in UI - no notification needed
 
         // Get session with improved error handling
         let session = null;
@@ -839,7 +870,7 @@ async function fetchUrlStats(url, forceRefresh = false) {
                 console.warn('406 Not Acceptable - API may be processing request, retrying...');
                 // Don't show error to user for 406, just log it and use fallback
                 clearStatsDisplay();
-                showMessage('Loading trust score...', 'info');
+                // Skip loading message for fallback to reduce noise
                 return;
             }
 
@@ -879,7 +910,10 @@ async function fetchUrlStats(url, forceRefresh = false) {
         saveCacheToStorage(url, cacheData);
 
         updateStatsDisplay(data);
-        showMessage(forceRefresh ? 'Trust score refreshed!' : 'Trust score loaded successfully.', 'success');
+        // Only show success for force refresh, not regular loads
+        if (forceRefresh) {
+            showMessage('Trust score refreshed!', 'success');
+        }
 
         isLoadingStats = false;
     } catch (error) {
@@ -931,11 +965,12 @@ submitRatingBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Disable submit button and show loading state
-    submitRatingBtn.disabled = true;
-    submitRatingBtn.textContent = '⏳ Submitting...';
+    // Set loading state for submit button
+    buttonStateManager.setState(submitRatingBtn, 'loading', {
+        loadingText: 'Submitting...'
+    });
 
-    showMessage('Submitting rating...', 'info');
+    // Button state shows loading - no notification needed
 
     try {
         let session = null;
@@ -1010,7 +1045,7 @@ submitRatingBtn.addEventListener('click', async () => {
             // Handle 406 errors specifically for rating submission
             if (response.status === 406) {
                 console.warn('406 Not Acceptable during rating submission - may still succeed');
-                showMessage('Rating is being processed...', 'info');
+                // 406 errors are handled silently - user doesn't need to know
                 // Don't return error, let it continue to try to get response
                 // The rating might still have been processed successfully
             } else {
@@ -1029,6 +1064,10 @@ submitRatingBtn.addEventListener('click', async () => {
                 }
 
                 showMessage(userMessage, 'error');
+                buttonStateManager.setState(submitRatingBtn, 'error', {
+                    errorText: 'Submission failed',
+                    duration: 3000
+                });
                 return;
             }
         }
@@ -1061,19 +1100,19 @@ submitRatingBtn.addEventListener('click', async () => {
 
             // Domain analysis happens in background - no need to notify user
 
-            // Invalidate cache since we have new data
-            statsCache.delete(currentUrl);
-            const cacheData = {
-                data: data.urlStats,
-                timestamp: Date.now()
-            };
-            statsCache.set(currentUrl, cacheData);
-            saveCacheToStorage(currentUrl, cacheData);
+            // Keep the locally calculated score that was already updated
+            // Don't overwrite with server data - use the local calculation instead
+            console.log('Rating submitted successfully, keeping local score calculation');
         }
 
-        // Temporarily disable submit button to prevent double submission
-        submitRatingBtn.disabled = true;
-        submitRatingBtn.textContent = '✅ Submitted!';
+        // Set success state for submit button
+        buttonStateManager.setState(submitRatingBtn, 'success', {
+            successText: 'Submitted!',
+            duration: 2000
+        });
+
+        // Notify compact rating manager of successful submission
+        compactRatingManager.onRatingSubmitted();
 
         // Reset form fields after successful submission
         setTimeout(() => {
@@ -1081,14 +1120,11 @@ submitRatingBtn.addEventListener('click', async () => {
             isSpamCheckbox.checked = false;
             isMisleadingCheckbox.checked = false;
             isScamCheckbox.checked = false;
-
-            // Re-enable submit button
-            submitRatingBtn.disabled = false;
-            submitRatingBtn.textContent = 'Submit Rating';
         }, 2000);
     } catch (error) {
         console.error('Error submitting rating:', {
-            error: error.message,
+            error: error.message || error.toString(),
+            errorType: error.name || 'Unknown',
             stack: error.stack,
             url: currentUrl,
             timestamp: new Date().toISOString()
@@ -1115,9 +1151,11 @@ submitRatingBtn.addEventListener('click', async () => {
 
         showMessage(userMessage, 'error');
 
-        // Re-enable submit button on error
-        submitRatingBtn.disabled = false;
-        submitRatingBtn.textContent = 'Submit Rating';
+        // Set error state for submit button
+        buttonStateManager.setState(submitRatingBtn, 'error', {
+            errorText: 'Failed to submit',
+            duration: 3000
+        });
     }
 });
 
@@ -1150,17 +1188,35 @@ async function fetchCurrentUrlAndStats() {
                 currentUrlSpan.textContent = currentUrl;
             }
 
-            // Only fetch stats if we're not already loading and the URL is valid
-            if (!isLoadingStats && currentUrl.startsWith('http')) {
+            // Validate URL before making API call
+            const isValidUrl = currentUrl && (currentUrl.startsWith('http://') || currentUrl.startsWith('https://'));
+            
+            if (!isLoadingStats && isValidUrl) {
                 console.log('Scheduling stats fetch for:', currentUrl);
                 // Add small delay to ensure UI and API are ready
                 setTimeout(() => {
                     if (!isLoadingStats) { // Double-check before making the call
-                        fetchUrlStats(currentUrl);
+                        fetchUrlStats(currentUrl, false); // Normal load, not force refresh
                     }
                 }, 200);
             } else {
-                console.log('Skipping stats fetch:', { isLoadingStats, validUrl: currentUrl.startsWith('http') });
+                console.log('Skipping stats fetch:', { 
+                    isLoadingStats, 
+                    validUrl: isValidUrl,
+                    url: currentUrl,
+                    reason: !isValidUrl ? 'Invalid URL (not http/https)' : 'Already loading'
+                });
+                
+                // Show appropriate message for invalid URLs
+                if (!isValidUrl && currentUrl) {
+                    if (currentUrl.startsWith('chrome://') || currentUrl.startsWith('chrome-extension://') || currentUrl.startsWith('moz-extension://')) {
+                        showMessage('Trust scores not available for browser pages.', 'info');
+                    } else if (currentUrl.startsWith('file://')) {
+                        showMessage('Trust scores not available for local files.', 'info');
+                    } else {
+                        showMessage('Trust scores only available for web pages (http/https).', 'info');
+                    }
+                }
             }
         } else {
             console.warn('No valid tab URL found:', tabs);
@@ -1224,6 +1280,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         initHeaderAuth();
         initAffiliateLinks();
         loadCacheFromStorage();
+        initButtonStateManagement();
+        initNotificationManager();
+        initTrustScoreTooltip();
+        
+        // Clear any stale notifications from previous sessions
+        if (notificationManager) {
+            notificationManager.clearAll();
+        }
 
         console.log('UI components initialized');
 
@@ -1316,6 +1380,70 @@ function initMessageBar() {
     });
 }
 
+// --- Trust Score Tooltip Initialization ---
+function initTrustScoreTooltip() {
+    console.log('Initializing trust score tooltip system...');
+    
+    // The tooltip system auto-initializes, but we can add custom configuration here
+    if (trustScoreTooltip) {
+        console.log('Trust score tooltip system initialized successfully');
+    } else {
+        console.warn('Failed to initialize trust score tooltip system');
+    }
+}
+
+// --- Notification Manager Initialization ---
+function initNotificationManager() {
+    console.log('Initializing enhanced notification manager...');
+    
+    // The notification manager auto-initializes, but we can add custom configuration here
+    if (notificationManager) {
+        console.log('Enhanced notification manager initialized successfully');
+        
+        // Show a welcome notification for testing (remove in production)
+        // notificationManager.show('Enhanced notifications ready!', 'info', { duration: 2000 });
+    } else {
+        console.warn('Failed to initialize notification manager');
+    }
+}
+
+// --- Button State Management Initialization ---
+function initButtonStateManagement() {
+    console.log('Initializing button state management...');
+    
+    // Initialize all buttons with state management
+    const buttonsToManage = [
+        // Main auth buttons
+        { selector: '#login-btn', options: {} },
+        { selector: '#signup-btn', options: {} },
+        { selector: '#forgot-password-btn', options: {} },
+        { selector: '#resend-btn', options: {} },
+        
+        // Header auth buttons
+        { selector: '#header-login-btn', options: {} },
+        { selector: '#header-signup-btn', options: {} },
+        { selector: '#header-forgot-password-btn', options: {} },
+        
+        // Action buttons
+        { selector: '#submit-rating-btn', options: {} },
+        
+        // Logout button
+        { selector: '#logout-btn', options: {} }
+    ];
+    
+    buttonsToManage.forEach(({ selector, options }) => {
+        const button = document.querySelector(selector);
+        if (button) {
+            buttonStateManager.initializeButton(button, options);
+            console.log(`Initialized button state management for: ${selector}`);
+        } else {
+            console.warn(`Button not found for state management: ${selector}`);
+        }
+    });
+    
+    console.log('Button state management initialization complete');
+}
+
 // --- Header Login/Signup Handlers ---
 function initHeaderAuth() {
     const headerLoginBtn = document.getElementById('header-login-btn');
@@ -1335,19 +1463,32 @@ function initHeaderAuth() {
                 return;
             }
 
-            headerLoginBtn.disabled = true;
-            headerLoginBtn.textContent = 'Logging in...';
+            buttonStateManager.setState(headerLoginBtn, 'loading', {
+                loadingText: 'Logging in...'
+            });
 
             try {
                 const { user, session, error } = await signIn(email, password);
                 if (error) {
                     if (error.message.includes('Email not confirmed')) {
                         showMessage('Please check your email and click the confirmation link before logging in.', 'error');
+                        buttonStateManager.setState(headerLoginBtn, 'error', {
+                            errorText: 'Email not confirmed',
+                            duration: 3000
+                        });
                     } else {
                         showMessage(`Login failed: ${error.message}`, 'error');
+                        buttonStateManager.setState(headerLoginBtn, 'error', {
+                            errorText: 'Login failed',
+                            duration: 3000
+                        });
                     }
                 } else {
                     showMessage('Login successful!', 'success');
+                    buttonStateManager.setState(headerLoginBtn, 'success', {
+                        successText: 'Success!',
+                        duration: 2000
+                    });
                     updateUI(session);
                     // Clear form
                     headerEmail.value = '';
@@ -1355,9 +1496,10 @@ function initHeaderAuth() {
                 }
             } catch (error) {
                 showMessage(`Login error: ${error.message}`, 'error');
-            } finally {
-                headerLoginBtn.disabled = false;
-                headerLoginBtn.textContent = 'Login';
+                buttonStateManager.setState(headerLoginBtn, 'error', {
+                    errorText: 'Network error',
+                    duration: 3000
+                });
             }
         });
     }
@@ -1373,19 +1515,32 @@ function initHeaderAuth() {
                 return;
             }
 
-            headerSignupBtn.disabled = true;
-            headerSignupBtn.textContent = 'Signing up...';
+            buttonStateManager.setState(headerSignupBtn, 'loading', {
+                loadingText: 'Signing up...'
+            });
 
             try {
                 const { user, session, error } = await signUp(email, password);
                 if (error) {
                     showMessage(`Sign up failed: ${error.message}`, 'error');
+                    buttonStateManager.setState(headerSignupBtn, 'error', {
+                        errorText: 'Sign up failed',
+                        duration: 3000
+                    });
                 } else {
                     if (session) {
                         showMessage('Account created and logged in successfully!', 'success');
+                        buttonStateManager.setState(headerSignupBtn, 'success', {
+                            successText: 'Account created!',
+                            duration: 2000
+                        });
                         updateUI(session);
                     } else {
                         showMessage('Account created! Please check your email for confirmation.', 'success');
+                        buttonStateManager.setState(headerSignupBtn, 'success', {
+                            successText: 'Check email',
+                            duration: 3000
+                        });
                     }
                     // Clear form
                     headerEmail.value = '';
@@ -1393,9 +1548,10 @@ function initHeaderAuth() {
                 }
             } catch (error) {
                 showMessage(`Sign up error: ${error.message}`, 'error');
-            } finally {
-                headerSignupBtn.disabled = false;
-                headerSignupBtn.textContent = 'Sign Up';
+                buttonStateManager.setState(headerSignupBtn, 'error', {
+                    errorText: 'Network error',
+                    duration: 3000
+                });
             }
         });
     }
@@ -1409,21 +1565,31 @@ function initHeaderAuth() {
                 return;
             }
 
-            headerForgotBtn.disabled = true;
-            headerForgotBtn.textContent = 'Sending...';
+            buttonStateManager.setState(headerForgotBtn, 'loading', {
+                loadingText: 'Sending...'
+            });
 
             try {
                 const { error } = await resetPassword(email);
                 if (error) {
                     showMessage(`Failed to send reset email: ${error.message}`, 'error');
+                    buttonStateManager.setState(headerForgotBtn, 'error', {
+                        errorText: 'Failed to send',
+                        duration: 3000
+                    });
                 } else {
                     showMessage('Password reset email sent! Check your inbox.', 'success');
+                    buttonStateManager.setState(headerForgotBtn, 'success', {
+                        successText: 'Email sent!',
+                        duration: 3000
+                    });
                 }
             } catch (error) {
                 showMessage(`Error: ${error.message}`, 'error');
-            } finally {
-                headerForgotBtn.disabled = false;
-                headerForgotBtn.textContent = 'Forgot Password?';
+                buttonStateManager.setState(headerForgotBtn, 'error', {
+                    errorText: 'Network error',
+                    duration: 3000
+                });
             }
         });
     }
@@ -1443,15 +1609,25 @@ function initHeaderAuth() {
 
 // Clean Logout Button
 logoutBtn.addEventListener('click', async () => {
-    logoutBtn.disabled = true;
-    showMessage('Logging out...', 'info');
+    buttonStateManager.setState(logoutBtn, 'loading', {
+        loadingText: 'Logging out...'
+    });
+    // Button state shows loading - no notification needed
 
     try {
         const { error } = await signOut();
         if (error) {
             showMessage(`Logout failed: ${error.message}`, 'error');
+            buttonStateManager.setState(logoutBtn, 'error', {
+                errorText: 'Logout failed',
+                duration: 3000
+            });
             console.error('Logout error:', error);
         } else {
+            buttonStateManager.setState(logoutBtn, 'success', {
+                successText: 'Logged out!',
+                duration: 1500
+            });
             updateUI(null);
             // Clear rating form
             ratingScoreSelect.value = '1';
@@ -1461,9 +1637,13 @@ logoutBtn.addEventListener('click', async () => {
             // Clear email/password fields
             emailInput.value = '';
             passwordInput.value = '';
-            showMessage('Logged out successfully.', 'success');
+            // Button state shows success - no notification needed
         }
-    } finally {
-        logoutBtn.disabled = false;
+    } catch (error) {
+        buttonStateManager.setState(logoutBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
+        showMessage(`Logout error: ${error.message}`, 'error');
     }
 });
