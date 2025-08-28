@@ -132,6 +132,7 @@ function updateStatsDisplay(data) {
     // Update the circular progress score
     trustScoreSpan.textContent = `${trustScore.toFixed(0)}%`;
     updateScoreBar(trustScore);
+    updateScoreLabel(trustScore);
     
     // Update trust score tooltip
     trustScoreTooltip.updateScore(trustScore, data);
@@ -199,12 +200,41 @@ function updateScoreBar(score) {
         progressRing.style.strokeDashoffset = offset;
         progressRing.style.stroke = strokeColor;
 
-        // Add a subtle glow effect based on score
-        if (score > 0) {
-            progressRing.style.filter = `drop-shadow(0 0 8px ${strokeColor}80)`;
+        // Remove glow effects for clean circular design
+        progressRing.style.filter = 'none';
+    }
+}
+
+function updateScoreLabel(score) {
+    const scoreLabel = document.getElementById('score-label');
+    
+    if (scoreLabel) {
+        // Remove all existing quality classes
+        scoreLabel.classList.remove('excellent', 'good', 'average', 'poor', 'unknown');
+        
+        // Determine label text and class based on score
+        let labelText, labelClass;
+        
+        if (score >= 75) {
+            labelText = 'Excellent';
+            labelClass = 'excellent';
+        } else if (score >= 50) {
+            labelText = 'Good';
+            labelClass = 'good';
+        } else if (score >= 25) {
+            labelText = 'Average';
+            labelClass = 'average';
+        } else if (score > 0) {
+            labelText = 'Poor';
+            labelClass = 'poor';
         } else {
-            progressRing.style.filter = 'none';
+            labelText = 'Unknown';
+            labelClass = 'unknown';
         }
+        
+        // Update the label text and apply the appropriate class
+        scoreLabel.textContent = labelText;
+        scoreLabel.classList.add(labelClass);
     }
 }
 
@@ -260,6 +290,7 @@ function clearStatsDisplay() {
     // Summary elements removed - keeping focus on trust score only
     
     updateScoreBar(baselineScore);
+    updateScoreLabel(baselineScore);
     
     // Update trust score tooltip with baseline
     trustScoreTooltip.updateScore(baselineScore, { data_source: 'baseline', domain: extractDomainFromCurrentUrl() });
