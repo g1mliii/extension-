@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Rater - Email Action</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f4f7f6;
+        }
+
+        .success-box {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .reset-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+
+        .instructions {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .password-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .password-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Email Confirmation Success -->
+    <div id="confirm-success" class="success-box hidden">
+        <h2>✅ Email Confirmed!</h2>
+        <p>Your email has been successfully verified. You can now log in to the URL Rater extension.</p>
+    </div>
+
+    <!-- Password Reset Form -->
+    <div id="password-reset" class="reset-box hidden">
+        <h2>🔑 Reset Your Password</h2>
+        <p>Enter your new password below:</p>
+
+        <div class="password-form">
+            <input type="password" id="new-password" placeholder="New Password" required>
+            <input type="password" id="confirm-password" placeholder="Confirm New Password" required>
+            <div id="error-message" class="error hidden"></div>
+            <button id="update-password-btn" class="button">Update Password</button>
+        </div>
+    </div>
+
+    <!-- Success message after password update -->
+    <div id="password-updated" class="success-box hidden">
+        <h2>✅ Password Updated!</h2>
+        <p>Your password has been successfully updated. You can now log in with your new password.</p>
+    </div>
+
+    <div id="instructions" class="instructions">
+        <h3>Next Steps:</h3>
+        <ol id="instruction-list">
+            <li>Click the URL Rater icon in your browser toolbar</li>
+            <li>Log in with your email and password</li>
+            <li>Start rating websites!</li>
+        </ol>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        // Initialize Supabase - Import configuration
+        import { CONFIG } from './config.js';
+        const supabaseUrl = CONFIG.SUPABASE_URL;
+        const supabaseAnonKey = CONFIG.SUPABASE_ANON_KEY;
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const type = urlParams.get('type');
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+
+        // Show appropriate content based on the type
+        function showContent() {
+            if (type === 'recovery' && accessToken) {
+                // Password reset flow
+                document.getElementById('password-reset').classList.remove('hidden');
+                document.getElementById('instruction-list').innerHTML = `
+                    <li>Enter your new password above</li>
+                    <li>Click "Update Password"</li>
+                    <li>Return to the URL Rater extension</li>
+                    <li>Log in with your new password</li>
+                `;
+            } else {
+                // Email confirmation flow
+                document.getElementById('confirm-success').classList.remove('hidden');
+            }
+        }
+
+        // Handle password update
+        document.getElementById('update-password-btn').addEventListener('click', async function () {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorDiv = document.getElementById('error-message');
+
+            // Clear previous errors
+            errorDiv.classList.add('hidden');
+
+            // Validate passwords
+            if (!newPassword || !confirmPassword) {
+                errorDiv.textContent = 'Please fill in both password fields.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters long.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Update password
+            try {
+                this.disabled = true;
+                this.textContent = 'Updating...';
+
+                // Set the session first
+                const { error: sessionError } = await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+
+                if (sessionError) throw sessionError;
+
+                // Update the password
+                const { error } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) throw error;
+
+                // Show success
+                document.getElementById('password-reset').classList.add('hidden');
+                document.getElementById('password-updated').classList.remove('hidden');
+                document.getElementById('instruction-list').innerHTML = `
+                    <li>Click the URL Rater icon in your browser toolbar</li>
+                    <li>Log in with your email and NEW password</li>
+                    <li>Start rating websites!</li>
+                `;
+
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.classList.remove('hidden');
+                this.disabled = false;
+                this.textContent = 'Update Password';
+            }
+        });
+
+
+
+        // Initialize the page
+        showContent();
+
+        // Auto-close after successful actions (optional)
+        setTimeout(function () {
+            if (document.getElementById('confirm-success').classList.contains('hidden') === false ||
+                document.getElementById('password-updated').classList.contains('hidden') === false) {
+                if (confirm('Action completed! Close this tab and return to the URL Rater extension?')) {
+                    window.close();
+                }
+            }
+        }, 5000);
+    </script>
+</body>
+
+</html>

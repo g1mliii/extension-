@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Rater - Trust Score</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <!-- Theme toggle removed - single dark mode only -->
+
+    <!-- Smart Header - Changes based on auth state -->
+    <div class="header logged-out" id="main-header">
+        <!-- Compact Login Form - Only visible when logged out -->
+        <div class="header-login" id="header-login">
+            <div class="login-row">
+                <input type="email" id="header-email" placeholder="Email">
+                <input type="password" id="header-password" placeholder="Password">
+            </div>
+            <div class="login-buttons">
+                <button id="header-login-btn">Login</button>
+                <button id="header-signup-btn">Sign Up</button>
+                <button id="header-forgot-password-btn" class="forgot-btn">Forgot?</button>
+            </div>
+        </div>
+        
+        <!-- Header Controls removed - will be re-added cleanly -->
+        <div class="header-controls">
+        </div>
+    </div>
+
+    <!-- Message/Feedback Bar -->
+    <div id="message-bar" class="message-bar hidden">
+        <div id="message-content" class="message-content"></div>
+        <button id="message-close" class="message-close">&times;</button>
+    </div>
+
+    <!-- Clean Logout Button for Logged In State -->
+    <button id="logout-btn" class="clean-logout-btn" style="display: none;" title="Logout">
+        LOGOUT
+    </button>
+
+    <!-- Trust Score Layout: Clean Centered Design -->
+    <div class="trust-score-layout" id="trust-score-section">
+        <!-- Trust Score Header with Tooltip -->
+        <div class="trust-score-header">
+            <button class="trust-score-tooltip-btn" id="trust-score-tooltip-btn">?</button>
+        </div>
+        
+        <!-- Centered Trust Score Circle - Larger -->
+        <div class="score-center-section">
+            <div class="score-circle-container-large">
+                <!-- Circular Progress Bar SVG - Larger -->
+                <svg class="circular-progress-large" viewBox="0 0 100 100">
+                    <circle class="progress-ring progress-ring-bg" cx="50" cy="50" r="45"/>
+                    <circle class="progress-ring progress-ring-fill" cx="50" cy="50" r="45" id="progress-ring"/>
+                </svg>
+                <div class="score-circle-large" id="score-circle">
+                    <div class="score-display">
+                        <div class="score-number-large" id="trust-score">N/A</div>
+                        <div class="score-label" id="score-label">Unknown</div>
+                    </div>
+                </div>
+            </div>
+            
+
+        </div>
+        
+        <!-- Warning Indicators Container (will be injected by WarningIndicatorSystem) -->
+        
+        <!-- URL Box -->
+        <div class="url-display-box">
+            <span id="current-url">Loading...</span>
+        </div>
+        
+        <!-- Hidden elements for data access (keep for JS compatibility) -->
+        <div style="display: none;">
+            <span id="total-ratings">N/A</span>
+            <span id="spam-count">0</span>
+            <span id="misleading-count">0</span>
+            <span id="scam-count">0</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+
+        <div id="auth-section">
+            <h2>Authentication</h2>
+            <div id="auth-status"></div>
+            <div id="login-form">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <div class="auth-buttons">
+                    <button id="login-btn">Login</button>
+                    <button id="signup-btn">Sign Up</button>
+                </div>
+                <button id="forgot-password-btn" class="link-btn">Forgot Password?</button>
+                <button id="resend-btn" style="display: none;">Resend Confirmation Email</button>
+            </div>
+        </div>
+
+        <!-- Ultra Compact Rating Interface -->
+        <div id="rating-section" class="ultra-compact-rating" style="display: none;">
+            <!-- Rating Guide Button -->
+            <div class="rating-guide-container">
+                <button class="rating-guide-btn" id="rating-guide-btn">?</button>
+            </div>
+            
+            <!-- Star Rating System - Main Focus with More Space -->
+            <div class="ultra-compact-stars-expanded" id="compact-star-rating">
+                <button class="ultra-star-expanded" data-rating="1" title="1 star - Very Poor">★</button>
+                <button class="ultra-star-expanded" data-rating="2" title="2 stars - Poor">★</button>
+                <button class="ultra-star-expanded" data-rating="3" title="3 stars - Average">★</button>
+                <button class="ultra-star-expanded" data-rating="4" title="4 stars - Good">★</button>
+                <button class="ultra-star-expanded" data-rating="5" title="5 stars - Excellent">★</button>
+            </div>
+            
+            <!-- Professional Quality Issue Controls -->
+            <div class="ultra-compact-flags">
+                <button class="ultra-flag-btn" data-flag="spam" title="Report spam or excessive ads">Spam/Ads</button>
+                <button class="ultra-flag-btn" data-flag="misleading" title="Report misleading information">Misleading</button>
+                <button class="ultra-flag-btn" data-flag="scam" title="Report suspicious activity">Suspicious</button>
+            </div>
+            
+            <!-- Submit button removed - double-tap stars to submit -->
+            
+            <!-- Hidden inputs for compatibility with existing JS -->
+            <select id="rating-score" style="display: none;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <input type="checkbox" id="is-spam" style="display: none;">
+            <input type="checkbox" id="is-misleading" style="display: none;">
+            <input type="checkbox" id="is-scam" style="display: none;">
+            <button id="submit-rating-btn" style="display: none;"></button>
+        </div>
+
+
+        </div>
+    </div>
+
+    <!-- Ad Space -->
+    <div class="ad-space">
+        <div class="ad-placeholder">Advertisement Space</div>
+    </div>
+
+    <!-- Affiliate Links Section -->
+    <div class="affiliate-section">
+        <div class="affiliate-title">Recommended Security Tools</div>
+        <div class="affiliate-links">
+            <a href="#" class="affiliate-link" id="affiliate-1password">
+                <div class="affiliate-icon">1P</div>
+                <span>1Password</span>
+            </a>
+            <a href="#" class="affiliate-link" id="affiliate-nordvpn">
+                <div class="affiliate-icon">VPN</div>
+                <span>NordVPN</span>
+            </a>
+        </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

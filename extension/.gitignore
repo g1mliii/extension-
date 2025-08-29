@@ -1,0 +1,54 @@
+# Development and testing files
+test-*.js
+test-*.html
+*-test.js
+*-test.html
+
+# Documentation files
+*.md
+!README.md
+
+# Development utilities
+config.auto.js
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Sensitive data
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.json
