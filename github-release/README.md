@@ -1,4 +1,4 @@
-# URL Trust Rater - Browser Extension
+# foglite - Browser Extension
 
 A community-driven browser extension that allows users to rate websites and view aggregated trust scores to make informed browsing decisions.
 

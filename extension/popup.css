@@ -1,14 +1,24 @@
 /* URL Rater - Clean Minimal CSS */
 
-/* iOS 26 Liquid Glass Theme Variables - Enhanced */
+/* Apple/Google Design System - Warm Yellow Theme */
 :root {
-    /* Primary Background Colors - iOS 26 Liquid Glass */
-    --bg-primary: rgba(15, 23, 42, 0.95);
-    --bg-glass: rgba(30, 41, 59, 0.85);
-    --bg-glass-hover: rgba(51, 65, 85, 0.92);
-    --bg-glass-secondary: rgba(30, 41, 59, 0.65);
-    --bg-glass-tertiary: rgba(51, 65, 85, 0.45);
-    --bg-glass-ultra: rgba(30, 41, 59, 0.95);
+    /* Apple 8pt Grid System */
+    --grid-8: 8px;
+    --grid-16: 16px;
+    --grid-24: 24px;
+    --grid-32: 32px;
+    --grid-40: 40px;
+    --grid-48: 48px;
+    --grid-56: 56px;
+    --grid-64: 64px;
+
+    /* Primary Background Colors - Enhanced Darker Nebulous Effect */
+    --bg-primary: rgba(3, 5, 10, 0.99);
+    --bg-glass: rgba(8, 12, 18, 0.95);
+    --bg-glass-hover: rgba(15, 20, 28, 0.98);
+    --bg-glass-secondary: rgba(8, 12, 18, 0.85);
+    --bg-glass-tertiary: rgba(15, 20, 28, 0.65);
+    --bg-glass-ultra: rgba(3, 5, 10, 0.99);
 
     /* Text Colors - Enhanced Contrast */
     --text-primary: rgba(248, 250, 252, 0.98);
@@ -26,27 +36,27 @@
     --shadow-accent: rgba(0, 0, 0, 0.65);
     --shadow-soft: rgba(0, 0, 0, 0.25);
 
-    /* iOS 26 Liquid Glass Accent Colors - Enhanced */
-    --accent-primary: #93C5FD;
-    --accent-secondary: #DBEAFE;
-    --accent-tertiary: #60A5FA;
-    --accent-quaternary: #3B82F6;
-    --accent-gradient: linear-gradient(135deg, #DBEAFE 0%, #93C5FD 50%, #60A5FA 100%);
-    --accent-glow: rgba(147, 197, 253, 0.35);
-    --accent-glow-strong: rgba(147, 197, 253, 0.5);
-    --accent-glow-subtle: rgba(147, 197, 253, 0.2);
+    /* Warm Yellow Accent Colors - Apple/Google Inspired */
+    --accent-primary: #FCD34D;
+    --accent-secondary: #FEF3C7;
+    --accent-tertiary: #F59E0B;
+    --accent-quaternary: #D97706;
+    --accent-gradient: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #F59E0B 100%);
+    --accent-glow: rgba(252, 211, 77, 0.35);
+    --accent-glow-strong: rgba(252, 211, 77, 0.5);
+    --accent-glow-subtle: rgba(252, 211, 77, 0.2);
 
-    /* Status Colors - iOS 26 Refined */
+    /* Status Colors - Apple/Google Refined */
     --success-color: #34D399;
     --success-glow: rgba(52, 211, 153, 0.3);
     --warning-color: #FBBF24;
     --warning-glow: rgba(251, 191, 36, 0.3);
-    --danger-color: #F87171;
-    --danger-glow: rgba(248, 113, 113, 0.3);
-    --info-color: #93C5FD;
-    --info-glow: rgba(147, 197, 253, 0.3);
+    --danger-color: #FCD34D;
+    --danger-glow: rgba(252, 211, 77, 0.3);
+    --info-color: #FCD34D;
+    --info-glow: rgba(252, 211, 77, 0.3);
 
-    /* iOS 26 Liquid Glass Effect Variables - Optimized */
+    /* Apple/Google Glass Effect Variables - Optimized */
     --glass-blur: blur(40px);
     --glass-blur-strong: blur(60px);
     --glass-blur-subtle: blur(20px);
@@ -57,14 +67,14 @@
     --glass-backdrop-strong: var(--glass-blur-strong) var(--glass-saturation) var(--glass-brightness) var(--glass-contrast);
     --glass-backdrop-subtle: var(--glass-blur-subtle) var(--glass-saturation) var(--glass-brightness);
 
-    /* iOS 26 Animation Variables - Performance Optimized */
+    /* Apple/Google Animation Variables - Performance Optimized */
     --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     --transition-smooth: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* iOS 26 Border Radius - Consistent System */
+    /* Apple/Google Border Radius System - Consistent 8px, 12px, 16px */
     --radius-xs: 6px;
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -73,15 +83,15 @@
     --radius-2xl: 24px;
     --radius-full: 50%;
 
-    /* iOS 26 Spacing System */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 12px;
-    --space-lg: 16px;
-    --space-xl: 20px;
-    --space-2xl: 24px;
+    /* Apple 8pt Grid Spacing System */
+    --space-xs: var(--grid-8);
+    --space-sm: var(--grid-8);
+    --space-md: var(--grid-16);
+    --space-lg: var(--grid-16);
+    --space-xl: var(--grid-24);
+    --space-2xl: var(--grid-32);
 
-    /* iOS 26 Shadow System - Layered */
+    /* Apple/Google Shadow System - Layered */
     --shadow-sm: 0 2px 8px var(--shadow-soft);
     --shadow-md: 0 4px 16px var(--shadow-color);
     --shadow-lg: 0 8px 25px var(--shadow-color);
@@ -90,6 +100,11 @@
     --shadow-glow-strong: 0 0 30px var(--accent-glow-strong);
     --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.1);
     --shadow-inner-strong: inset 0 2px 4px rgba(255, 255, 255, 0.08);
+
+    /* Apple/Google Touch Target Standards */
+    --touch-target-min: 44px;
+    --touch-target-comfortable: 48px;
+    --touch-target-large: 56px;
 }
 
 /* iOS 26 Liquid Glass Base Styles - Performance Optimized */
@@ -122,15 +137,19 @@ body {
     font-weight: 400;
     letter-spacing: -0.01em;
     width: 380px;
-    min-height: 580px;
+    min-height: 420px;
+    /* Smaller default height for logged out state */
     margin: 0;
-    padding: var(--space-md);
-    padding-top: var(--space-lg);
+    padding: var(--grid-16);
+    padding-top: var(--grid-16);
+    /* Darker nebulous background effect - Enhanced */
     background: linear-gradient(135deg,
-            rgba(0, 0, 0, 0.95) 0%,
-            rgba(10, 10, 15, 0.92) 30%,
-            rgba(15, 15, 25, 0.95) 70%,
-            rgba(20, 20, 30, 0.98) 100%);
+            rgba(0, 0, 0, 0.99) 0%,
+            rgba(2, 4, 8, 0.98) 20%,
+            rgba(4, 6, 12, 0.99) 40%,
+            rgba(6, 8, 15, 0.98) 60%,
+            rgba(8, 10, 18, 0.99) 80%,
+            rgba(3, 5, 10, 1) 100%);
     backdrop-filter: var(--glass-backdrop-strong);
     -webkit-backdrop-filter: var(--glass-backdrop-strong);
     color: var(--text-primary);
@@ -149,6 +168,17 @@ body {
     position: relative;
     will-change: transform;
     transform: translateZ(0);
+    transition: min-height var(--transition-normal);
+}
+
+/* Logged in state - taller to accommodate rating interface */
+body.logged-in {
+    min-height: 580px;
+}
+
+/* Logged out state - compact height */
+body.logged-out {
+    min-height: 420px;
 }
 
 /* iOS 26 Liquid Glass Scrollbar Styling - Hidden */
@@ -174,15 +204,15 @@ body {
     scrollbar-width: none;
 }
 
-/* iOS 26 Liquid Glass Header */
+/* Apple/Google Design Header */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-sm);
-    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--grid-8);
+    padding: var(--grid-16) var(--grid-24);
     border-bottom: 1px solid var(--border-color);
-    min-height: 50px;
+    min-height: var(--touch-target-comfortable);
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: var(--glass-backdrop);
     -webkit-backdrop-filter: var(--glass-backdrop);
@@ -197,23 +227,23 @@ body {
 }
 
 .header.logged-in {
-    padding: 4px 8px;
-    min-height: 24px;
+    padding: var(--grid-8);
+    min-height: var(--grid-32);
     background: transparent;
     border: none;
     box-shadow: none;
-    margin-bottom: 2px;
+    margin-bottom: var(--grid-8);
 }
 
 .header.logged-in .header-login {
     display: none;
 }
 
-/* Header Login Form */
+/* Apple/Google Header Login Form */
 .header-login {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--grid-8);
     flex: 1;
     max-width: 100%;
     min-width: 280px;
@@ -221,14 +251,14 @@ body {
 
 .login-row {
     display: flex;
-    gap: 10px;
+    gap: var(--grid-8);
 }
 
 .header-login input {
     flex: 1;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--grid-8) var(--grid-16);
     font-size: 12px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.09);
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
@@ -237,7 +267,7 @@ body {
     font-family: inherit;
     font-weight: 500;
     transition: all var(--transition-normal);
-    height: 32px;
+    height: var(--grid-32);
     max-width: 140px;
     min-width: 100px;
     box-shadow:
@@ -264,24 +294,28 @@ body {
 
 .login-buttons {
     display: flex;
-    gap: 6px;
-    margin-top: 2px;
+    gap: var(--grid-8);
+    margin-top: var(--grid-8);
 }
 
 .header-login button {
-    padding: var(--space-xs) var(--space-md);
+    padding: var(--grid-8) var(--grid-16);
     font-size: 11px;
-    border-radius: var(--radius-sm);
-    background: var(--accent-primary);
+    border-radius: var(--radius-lg);
+    /* Rounded rectangle for text buttons */
+    background: #FCD34D !important;
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
-    border: 1px solid var(--accent-primary);
-    color: rgba(30, 58, 138, 0.9);
+    border: 1px solid #FCD34D !important;
+    color: rgba(20, 20, 20, 0.9);
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-normal);
-    height: 28px;
+    height: var(--grid-32);
+    min-width: var(--touch-target-min);
+    width: auto;
+    /* Allow text to determine width */
     box-shadow:
         inset 0 1px 2px rgba(255, 255, 255, 0.3),
         var(--shadow-sm),
@@ -289,6 +323,9 @@ body {
     will-change: transform, box-shadow, background;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .header-login button::before {
@@ -307,8 +344,9 @@ body {
 }
 
 .header-login button:hover {
-    background: var(--accent-secondary);
-    border-color: var(--accent-tertiary);
+    background: #FEF3C7 !important;
+    border-color: #F59E0B !important;
+    color: rgba(20, 20, 20, 1);
     transform: translateY(-1px) scale(1.02);
     box-shadow:
         inset 0 1px 2px rgba(255, 255, 255, 0.4),
@@ -325,19 +363,22 @@ body {
 #header-login-btn,
 #header-signup-btn {
     flex: 1;
+    /* Allow buttons to share space equally */
+    max-width: 80px;
+    /* Prevent excessive stretching */
 }
 
-/* iOS 26 Liquid Glass Message/Feedback Bar - Overlay Style */
+/* Apple/Google Message/Feedback Bar - Overlay Style */
 .message-bar {
     position: fixed;
-    top: 10px;
+    top: var(--grid-16);
     left: 50%;
     transform: translateX(-50%) translateY(-120%) scale(0.9);
     width: 280px;
-    max-width: calc(100vw - 20px);
+    max-width: calc(100vw - var(--grid-24));
     z-index: 2000;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    padding: var(--grid-8) var(--grid-16);
+    border-radius: var(--radius-md);
     backdrop-filter: blur(20px) saturate(150%) brightness(1.1);
     -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.1);
     border: 1px solid var(--border-highlight);
@@ -347,7 +388,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-sm);
+    gap: var(--grid-8);
     font-size: 12px;
     font-weight: 600;
     transition: all var(--transition-normal);
@@ -433,12 +474,13 @@ body {
     font-weight: bold;
     cursor: pointer;
     padding: 0;
-    width: 20px;
-    height: 20px;
+    width: var(--grid-24);
+    height: var(--grid-24);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     transition: all var(--transition-normal);
     opacity: 0.7;
     will-change: transform, opacity, background;
@@ -455,6 +497,7 @@ body {
     height: 0;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     transition: all var(--transition-normal);
     transform: translate(-50%, -50%);
 }
@@ -495,30 +538,53 @@ body {
     }
 }
 
-.forgot-btn {
+.forgot-btn,
+#forgot-btn,
+button.forgot-btn {
     flex: 0 0 auto;
     font-size: 10px !important;
-    padding: 6px 8px !important;
+    padding: var(--grid-8) var(--grid-16) !important;
+    /* Horizontal padding for text */
     color: rgba(255, 255, 255, 0.6) !important;
     background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--radius-lg) !important;
+    /* Rounded rectangle like other buttons */
+    min-width: var(--touch-target-min) !important;
+    /* Ensure minimum touch target */
+    height: var(--grid-32) !important;
+    /* Match other buttons */
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-/* iOS 26 Liquid Glass Logout Button */
+.forgot-btn:hover,
+#forgot-btn:hover,
+button.forgot-btn:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Apple/Google Logout Button */
 #logout-btn.clean-logout-btn {
     position: fixed !important;
-    top: var(--space-sm) !important;
-    right: var(--space-sm) !important;
+    top: var(--grid-8) !important;
+    right: var(--grid-8) !important;
     left: auto !important;
     z-index: 1001;
-    padding: 4px 8px;
-    width: 52px;
-    height: 24px;
-    border-radius: var(--radius-sm);
-    background: rgba(248, 113, 113, 0.95);
+    padding: var(--grid-8) var(--grid-16);
+    width: auto;
+    min-width: var(--touch-target-min);
+    height: var(--grid-32);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: var(--danger-color);
     backdrop-filter: var(--glass-backdrop);
     -webkit-backdrop-filter: var(--glass-backdrop);
-    border: 1px solid rgba(248, 113, 113, 0.8);
+    border: 1px solid var(--danger-color);
     color: white;
     cursor: pointer;
     display: flex;
@@ -539,10 +605,8 @@ body {
     overflow: hidden;
 }
 
-/* Removed problematic ::before pseudo-element that was covering the icon */
-
 .clean-logout-btn:hover {
-    background: var(--danger-color);
+    background: #EF4444;
     border-color: #EF4444;
     color: white;
     transform: translateY(-1px) scale(1.05);
@@ -558,27 +622,86 @@ body {
     transition: all var(--transition-fast);
 }
 
-/* Text-based logout icon styling - clean without shadow */
-.clean-logout-btn {
-    text-shadow: none;
-    color: white !important;
+/* Apple/Google Logout Button */
+#logout-btn.clean-logout-btn {
+    position: fixed !important;
+    top: var(--grid-8) !important;
+    right: var(--grid-8) !important;
+    left: auto !important;
+    z-index: 1001;
+    padding: var(--grid-8) var(--grid-16);
+    width: auto;
+    min-width: var(--touch-target-min);
+    height: var(--grid-32);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: var(--danger-color);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--danger-color);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.3),
+        var(--shadow-sm),
+        var(--shadow-glow-subtle);
+    will-change: transform, box-shadow, background;
+    position: relative;
+    overflow: hidden;
 }
 
 .clean-logout-btn:hover {
-    text-shadow: none;
-    color: white !important;
+    background: #EF4444;
+    border-color: #EF4444;
+    color: white;
+    transform: translateY(-1px) scale(1.05);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.3),
+        var(--shadow-md),
+        var(--danger-glow),
+        0 0 0 2px var(--danger-glow);
 }
 
-/* iOS 26 Liquid Glass Trust Score Layout */
+.clean-logout-btn:active {
+    transform: translateY(0) scale(0.95);
+    transition: all var(--transition-fast);
+}
+
+/* Fixed Logout Button - High Specificity */
+#logout-btn.clean-logout-btn,
+.clean-logout-btn {
+    background: var(--accent-primary) !important;
+    border: 1px solid var(--accent-primary) !important;
+    border-radius: var(--radius-lg) !important;
+    color: rgba(20, 20, 20, 0.9) !important;
+}
+
+.clean-logout-btn:hover,
+#logout-btn.clean-logout-btn:hover {
+    background: var(--accent-tertiary) !important;
+    border-color: var(--accent-quaternary) !important;
+    color: rgba(20, 20, 20, 1) !important;
+}
+
+/* Apple/Google Trust Score Layout */
 .trust-score-layout {
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: var(--glass-backdrop);
     -webkit-backdrop-filter: var(--glass-backdrop);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: var(--space-md);
-    margin-bottom: var(--space-sm);
-    margin-top: var(--space-xs);
+    border-radius: var(--radius-lg);
+    padding: var(--grid-16);
+    margin-bottom: var(--grid-8);
+    margin-top: var(--grid-8);
     box-shadow:
         var(--shadow-lg),
         0 0 0 1px rgba(255, 255, 255, 0.06),
@@ -590,37 +713,19 @@ body {
     will-change: transform, box-shadow;
 }
 
-.trust-score-layout::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    opacity: 0.8;
-}
-
-.trust-score-layout:hover {
-    transform: translateY(-1px);
-    box-shadow:
-        var(--shadow-xl),
-        0 0 0 1px rgba(255, 255, 255, 0.08),
-        var(--shadow-inner-strong),
-        var(--shadow-glow);
-}
-
 /* Trust Score Header with Tooltip */
 .trust-score-header {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 4px;
+    align-items: center;
+    margin-bottom: var(--grid-8);
 }
 
 .trust-score-tooltip-btn {
-    width: 20px;
-    height: 20px;
+    width: var(--grid-24);
+    height: var(--grid-24);
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
@@ -642,7 +747,7 @@ body {
 .trust-score-tooltip-btn:hover {
     background: var(--accent-primary);
     border-color: var(--accent-secondary);
-    color: rgba(30, 58, 138, 0.9);
+    color: rgba(20, 20, 20, 0.9);
     transform: scale(1.15);
     opacity: 1;
     box-shadow: var(--shadow-sm), var(--shadow-glow);
@@ -652,8 +757,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 12px;
-    padding: 8px 0;
+    margin-bottom: var(--grid-16);
+    padding: var(--grid-8) 0;
 }
 
 /* Stats summary removed - keeping focus on trust score only */
@@ -698,6 +803,7 @@ body {
     width: 160px;
     height: 160px;
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     position: relative;
     background: rgba(255, 255, 255, 0.06);
     border: 3px solid rgba(255, 255, 255, 0.12);
@@ -751,15 +857,15 @@ body {
     transition: color var(--transition-normal);
 }
 
-/* Score label colors based on quality */
+/* Score label colors based on quality - Warm yellow theme */
 .score-label.excellent {
     color: #34D399;
     /* Green for excellent (75%+) */
 }
 
 .score-label.good {
-    color: #93C5FD;
-    /* Blue for good (50-74%) */
+    color: #FCD34D;
+    /* Warm yellow for good (50-74%) */
 }
 
 .score-label.average {
@@ -773,8 +879,236 @@ body {
 }
 
 .score-label.unknown {
+    color: #FEF3C7;
+    /* Light warm yellow for unknown */
+}
+
+/* URL Display Box */
+.url-display-box {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--grid-16);
+    margin-bottom: var(--grid-8);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: inherit;
+    word-break: break-all;
+    text-align: left;
+}
+
+.trust-score-layout::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    opacity: 0.8;
+}
+
+.trust-score-layout:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        var(--shadow-xl),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        var(--shadow-inner-strong),
+        var(--shadow-glow);
+}
+
+/* Trust Score Header with Tooltip */
+.trust-score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--grid-8);
+}
+
+/* Logo container */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: var(--grid-8);
+}
+
+.logo-icon {
+    width: var(--grid-24);
+    height: var(--grid-24);
+    border-radius: var(--radius-sm);
+    background: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: rgba(20, 20, 20, 0.9);
+    box-shadow: var(--shadow-sm);
+}
+
+.trust-score-tooltip-btn {
+    width: var(--grid-24);
+    height: var(--grid-24);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--glass-backdrop-subtle);
+    -webkit-backdrop-filter: var(--glass-backdrop-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--accent-primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    will-change: transform, box-shadow, background;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.8;
+}
+
+.trust-score-tooltip-btn:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-secondary);
+    color: rgba(30, 58, 138, 0.9);
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: var(--shadow-sm), var(--shadow-glow);
+}
+
+.score-center-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--grid-16);
+    padding: var(--grid-8) 0;
+}
+
+/* Stats summary removed - keeping focus on trust score only */
+
+.score-circle-container-large {
+    width: 160px;
+    height: 160px;
+    position: relative;
+}
+
+/* Circular Progress Bar - Large */
+.circular-progress-large {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 176px;
+    height: 176px;
+    transform: rotate(-90deg);
+    z-index: 1;
+}
+
+.progress-ring {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.progress-ring-bg {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.progress-ring-fill {
+    stroke: #93C5FD;
+    /* stroke-dasharray and stroke-dashoffset will be set dynamically by JavaScript */
+    stroke-dasharray: 0;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Removed glow effect for clean circular design */
+}
+
+.score-circle-large {
+    width: 160px;
+    height: 160px;
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        var(--shadow-lg),
+        var(--shadow-inner);
+    transition: all var(--transition-smooth);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    z-index: 2;
+    will-change: transform, box-shadow;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Removed rotating glow effect for clean circular design */
+
+.score-display {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.score-number-large {
+    font-size: 32px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    font-family: inherit;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+}
+
+.score-label {
+    font-size: 12px;
+    font-weight: 600;
     color: #DBEAFE;
-    /* Default blue for unknown */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    font-family: inherit;
+    line-height: 1;
+    margin-bottom: 2px;
+    transition: color var(--transition-normal);
+}
+
+/* Score label colors based on quality - Warm yellow theme */
+.score-label.excellent {
+    color: #34D399;
+    /* Green for excellent (75%+) */
+}
+
+.score-label.good {
+    color: #FCD34D;
+    /* Warm yellow for good (50-74%) */
+}
+
+.score-label.average {
+    color: #FBBF24;
+    /* Yellow for average (25-49%) */
+}
+
+.score-label.poor {
+    color: #F87171;
+    /* Red for poor (<25%) */
+}
+
+.score-label.unknown {
+    color: #FEF3C7;
+    /* Light warm yellow for unknown */
 }
 
 /* Score subtitle removed - no longer needed */
@@ -790,9 +1124,9 @@ body {
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
+    border-radius: var(--radius-md);
+    padding: var(--grid-16);
+    margin-bottom: var(--grid-8);
     font-size: 12px;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.8);
@@ -806,18 +1140,18 @@ body {
     display: none !important;
 }
 
-/* Ultra Compact Rating Section - Minimal Vertical Space */
+/* Ultra Compact Rating Section - Apple/Google Spacing */
 .ultra-compact-rating {
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: var(--glass-backdrop);
     -webkit-backdrop-filter: var(--glass-backdrop);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-md);
-    margin-bottom: var(--space-md);
+    border-radius: var(--radius-lg);
+    padding: var(--grid-16);
+    margin-bottom: var(--grid-16);
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: var(--grid-8);
     transition: all var(--transition-normal);
     will-change: transform, box-shadow;
     box-shadow:
@@ -834,56 +1168,19 @@ body {
         var(--shadow-glow);
 }
 
-/* Ultra Compact Responsive Adjustments */
-@media (max-width: 400px) {
-    .ultra-compact-stars-expanded {
-        gap: var(--space-sm);
-        margin: 0 -var(--space-xs);
-    }
-
-    .ultra-star-expanded {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-
-    .ultra-compact-flags {
-        gap: 2px;
-    }
-
-    .ultra-flag-btn {
-        padding: 3px 6px;
-        font-size: 7px;
-        min-height: 18px;
-    }
-
-    .ultra-submit-btn {
-        display: none;
-    }
-
-    .rating-guide-tooltip {
-        width: calc(100vw - 20px);
-        max-width: 300px;
-    }
-
-    .rating-guide-content {
-        padding: var(--space-md);
-        font-size: 11px;
-    }
-}
-
 /* Rating Guide Container */
 .rating-guide-container {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 2px;
+    margin-bottom: var(--grid-8);
 }
 
-/* Rating Guide Button - Reusing Trust Score Help Button Style */
+/* Rating Guide Button - Apple/Google Style */
 .rating-guide-btn {
-    width: 16px;
-    height: 16px;
+    width: var(--grid-24);
+    height: var(--grid-24);
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
@@ -911,6 +1208,219 @@ body {
     height: 0;
     background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    transition: all var(--transition-normal);
+    transform: translate(-50%, -50%);
+}
+
+.rating-guide-btn:hover::before {
+    width: 30px;
+    height: 30px;
+}
+
+.rating-guide-btn:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-secondary);
+    color: rgba(20, 20, 20, 0.9);
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow:
+        var(--shadow-sm),
+        var(--shadow-glow);
+}
+
+.rating-guide-btn:active {
+    transform: scale(1.1);
+    transition: all var(--transition-fast);
+}
+
+/* Ultra Compact Star Rating - Apple/Google Touch Targets */
+.ultra-compact-stars-expanded {
+    display: flex;
+    justify-content: center;
+    gap: var(--grid-8);
+    padding: 0;
+    margin: 0;
+}
+
+.ultra-star-expanded {
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--glass-backdrop-subtle);
+    -webkit-backdrop-filter: var(--glass-backdrop-subtle);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    color: var(--accent-primary);
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-subtle);
+    will-change: transform, box-shadow, background;
+}
+
+.ultra-star-expanded:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.05);
+    box-shadow: var(--shadow-sm), var(--shadow-glow-subtle);
+}
+
+.ultra-star-expanded.selected {
+    background: var(--accent-primary);
+    color: rgba(20, 20, 20, 0.9);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-sm), var(--shadow-glow);
+}
+
+/* Ultra Compact Flag Controls - Apple/Google Style */
+.ultra-compact-flags {
+    display: flex;
+    justify-content: center;
+    gap: var(--grid-8);
+    margin-top: var(--grid-8);
+}
+
+.ultra-flag-btn {
+    padding: var(--grid-8) var(--grid-16);
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--glass-backdrop-subtle);
+    -webkit-backdrop-filter: var(--glass-backdrop-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    min-height: var(--grid-32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform, box-shadow, background;
+}
+
+.ultra-flag-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: var(--shadow-sm), var(--shadow-glow-subtle);
+}
+
+.ultra-flag-btn.selected {
+    background: var(--warning-color);
+    color: rgba(20, 20, 20, 0.9);
+    border-color: var(--warning-color);
+    box-shadow: var(--shadow-sm), var(--warning-glow);
+}
+
+/* Ultra Compact Rating Section - Apple/Google Spacing */
+.ultra-compact-rating {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--grid-16);
+    margin-bottom: var(--grid-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--grid-8);
+    transition: all var(--transition-normal);
+    will-change: transform, box-shadow;
+    box-shadow:
+        var(--shadow-md),
+        var(--shadow-inner),
+        var(--shadow-glow-subtle);
+}
+
+.ultra-compact-rating:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        var(--shadow-lg),
+        var(--shadow-inner-strong),
+        var(--shadow-glow);
+}
+
+/* Apple/Google Responsive Adjustments */
+@media (max-width: 400px) {
+    .ultra-compact-stars-expanded {
+        gap: var(--grid-8);
+        margin: 0;
+    }
+
+    .ultra-star-expanded {
+        width: var(--grid-40);
+        height: var(--grid-40);
+        font-size: 16px;
+    }
+
+    .ultra-compact-flags {
+        gap: var(--grid-8);
+    }
+
+    .ultra-flag-btn {
+        padding: var(--grid-8);
+        font-size: 8px;
+        min-height: var(--grid-24);
+    }
+
+    .rating-guide-tooltip {
+        width: calc(100vw - var(--grid-24));
+        max-width: 300px;
+    }
+
+    .rating-guide-content {
+        padding: var(--grid-16);
+        font-size: 11px;
+    }
+}
+
+/* Rating Guide Container */
+.rating-guide-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--grid-8);
+}
+
+/* Rating Guide Button - Apple/Google Style */
+.rating-guide-btn {
+    width: var(--grid-24);
+    height: var(--grid-24);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--glass-backdrop-subtle);
+    -webkit-backdrop-filter: var(--glass-backdrop-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--accent-primary);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    will-change: transform, box-shadow, background;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.7;
+}
+
+.rating-guide-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     transition: all var(--transition-normal);
     transform: translate(-50%, -50%);
 }
@@ -936,15 +1446,15 @@ body {
     transition: all var(--transition-fast);
 }
 
-/* Rating Guide Tooltip - Modal Style */
+/* Rating Guide Tooltip - Apple/Google Modal Style */
 .rating-guide-tooltip {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
     width: 280px;
-    max-width: calc(100vw - 40px);
-    background: rgba(15, 23, 42, 0.98);
+    max-width: calc(100vw - var(--grid-48));
+    background: var(--bg-glass-ultra);
     backdrop-filter: var(--glass-backdrop-strong);
     -webkit-backdrop-filter: var(--glass-backdrop-strong);
     border: 1px solid var(--border-color);
@@ -973,7 +1483,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--grid-16) var(--grid-24);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -992,12 +1502,13 @@ body {
     font-weight: bold;
     cursor: pointer;
     padding: 0;
-    width: 24px;
-    height: 24px;
+    width: var(--grid-32);
+    height: var(--grid-32);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
     transition: all var(--transition-normal);
     opacity: 0.7;
 }
@@ -1009,7 +1520,7 @@ body {
 }
 
 .rating-guide-content {
-    padding: var(--space-lg);
+    padding: var(--grid-24);
     font-size: 12px;
     line-height: 1.4;
     color: var(--text-secondary);
@@ -1036,15 +1547,15 @@ body {
     font-weight: 600;
 }
 
-/* Rating Impact Preview */
+/* Rating Impact Preview - Apple/Google Style */
 .rating-impact-preview {
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: var(--space-xs) var(--space-sm);
-    margin-bottom: var(--space-xs);
+    border-radius: var(--radius-md);
+    padding: var(--grid-8) var(--grid-16);
+    margin-bottom: var(--grid-8);
     transition: all var(--transition-normal);
     opacity: 0;
     transform: translateY(-10px) scale(0.95);
@@ -1066,7 +1577,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-xs);
+    gap: var(--grid-8);
     font-size: 11px;
     font-weight: 600;
 }
@@ -1106,8 +1617,8 @@ body {
 }
 
 .impact-details {
-    margin-top: var(--space-xs);
-    padding-top: var(--space-xs);
+    margin-top: var(--grid-8);
+    padding-top: var(--grid-8);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1115,7 +1626,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: var(--grid-8);
     font-size: 10px;
     font-weight: 600;
 }
@@ -1134,36 +1645,91 @@ body {
     transition: color var(--transition-normal);
 }
 
-/* Ultra Compact Star Rating - Expanded and Main Focus */
+/* Ultra Compact Star Rating - Apple/Google Touch Targets */
 .ultra-compact-stars-expanded {
     display: flex;
     justify-content: center;
-    gap: var(--space-lg);
+    gap: var(--grid-8);
     padding: 0;
-    margin: 0 -var(--space-sm);
+    margin: 0;
 }
 
 .ultra-star-expanded {
-    width: 40px;
-    height: 40px;
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
     border: none;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: var(--glass-backdrop-subtle);
     -webkit-backdrop-filter: var(--glass-backdrop-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 20px;
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    color: var(--accent-primary);
+    font-size: 18px;
+    font-weight: 400;
     cursor: pointer;
     transition: all var(--transition-normal);
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    overflow: hidden;
-    will-change: transform, background, color;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-subtle);
+    will-change: transform, box-shadow, background;
 }
+
+.ultra-star-expanded:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.05);
+    box-shadow: var(--shadow-sm), var(--shadow-glow-subtle);
+}
+
+.ultra-star-expanded.selected {
+    background: var(--accent-primary);
+    color: rgba(20, 20, 20, 0.9);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-sm), var(--shadow-glow);
+}
+
+/* Ultra Compact Flag Controls - Apple/Google Style */
+.ultra-compact-flags {
+    display: flex;
+    justify-content: center;
+    gap: var(--grid-8);
+    margin-top: var(--grid-8);
+}
+
+.ultra-flag-btn {
+    padding: var(--grid-8) var(--grid-16);
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    /* Keep as perfect circle for trust score display */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--glass-backdrop-subtle);
+    -webkit-backdrop-filter: var(--glass-backdrop-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    min-height: var(--grid-32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform, box-shadow, background;
+}
+
+.ultra-flag-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: var(--shadow-sm), var(--shadow-glow-subtle);
+}
+
+.ultra-flag-btn.selected {
+    background: var(--warning-color);
+    color: rgba(20, 20, 20, 0.9);
+    border-color: var(--warning-color);
+    box-shadow: var(--shadow-sm), var(--warning-glow);
+}
+
+/* Duplicate star styles removed - cleaned up */
 
 .ultra-star-expanded:hover {
     background: rgba(255, 255, 255, 0.15);
@@ -1809,11 +2375,32 @@ S 26 Liquid Glass Additional Animations and Effects */
         0 0 40px var(--accent-glow);
 }
 
-/* Enhanced focus states for accessibility */
+/* Enhanced focus states for WCAG accessibility */
 .header-login input:focus,
-.rating-input select:focus {
+.rating-input select:focus,
+.ultra-star-expanded:focus,
+.ultra-flag-btn:focus,
+.trust-score-tooltip-btn:focus,
+.rating-guide-btn:focus,
+.clean-logout-btn:focus {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--accent-glow-subtle);
+}
+
+/* High contrast focus for better accessibility */
+@media (prefers-contrast: high) {
+
+    .header-login input:focus,
+    .rating-input select:focus,
+    .ultra-star-expanded:focus,
+    .ultra-flag-btn:focus,
+    .trust-score-tooltip-btn:focus,
+    .rating-guide-btn:focus,
+    .clean-logout-btn:focus {
+        outline: 3px solid var(--accent-primary);
+        outline-offset: 3px;
+    }
 }
 
 /* Reduced motion preferences */
@@ -1833,13 +2420,30 @@ S 26 Liquid Glass Additional Animations and Effects */
     }
 }
 
-/* High contrast mode support */
+/* High contrast mode support for WCAG compliance */
 @media (prefers-contrast: high) {
     :root {
         --border-color: rgba(255, 255, 255, 0.8);
         --border-subtle: rgba(255, 255, 255, 0.6);
         --text-primary: rgba(255, 255, 255, 1);
-        --text-secondary: rgba(255, 255, 255, 0.9);
+        --text-secondary: rgba(255, 255, 255, 0.95);
+        --text-tertiary: rgba(255, 255, 255, 0.9);
+        --accent-primary: #FFD700;
+        /* Higher contrast yellow */
+        --accent-secondary: #FFF8DC;
+        --bg-glass: rgba(0, 0, 0, 0.95);
+        --bg-glass-hover: rgba(20, 20, 20, 0.98);
+    }
+
+    .ultra-star-expanded,
+    .ultra-flag-btn,
+    .header-login button {
+        border-width: 2px;
+    }
+
+    .score-number-large {
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
     }
 }
 
@@ -1858,6 +2462,34 @@ select,
 .affiliate-link {
     transition-property: transform, box-shadow, background-color, border-color, opacity;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Keyboard navigation support */
+.ultra-star-expanded:focus-visible,
+.ultra-flag-btn:focus-visible,
+.trust-score-tooltip-btn:focus-visible,
+.rating-guide-btn:focus-visible {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* Skip link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--accent-primary);
+    color: rgba(20, 20, 20, 0.9);
+    padding: var(--grid-8) var(--grid-16);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 600;
+    z-index: 1000;
+    transition: top var(--transition-normal);
+}
+
+.skip-link:focus {
+    top: 6px;
 }
 
 /* iOS 26 Liquid Glass Enhancement Complete */

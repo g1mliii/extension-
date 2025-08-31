@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+    <!-- Skip link for accessibility -->
+    <a href="#trust-score-section" class="skip-link">Skip to main content</a>
+    
     <!-- Theme toggle removed - single dark mode only -->
 
     <!-- Smart Header - Changes based on auth state -->
@@ -14,13 +17,13 @@
         <!-- Compact Login Form - Only visible when logged out -->
         <div class="header-login" id="header-login">
             <div class="login-row">
-                <input type="email" id="header-email" placeholder="Email">
-                <input type="password" id="header-password" placeholder="Password">
+                <input type="email" id="header-email" placeholder="Email" aria-label="Email address">
+                <input type="password" id="header-password" placeholder="Password" aria-label="Password">
             </div>
             <div class="login-buttons">
-                <button id="header-login-btn">Login</button>
-                <button id="header-signup-btn">Sign Up</button>
-                <button id="header-forgot-password-btn" class="forgot-btn">Forgot?</button>
+                <button id="header-login-btn" aria-label="Login to your account">Login</button>
+                <button id="header-signup-btn" aria-label="Create new account">Sign Up</button>
+                <button id="header-forgot-password-btn" class="forgot-btn" aria-label="Reset forgotten password">Forgot?</button>
             </div>
         </div>
         
@@ -36,7 +39,7 @@
     </div>
 
     <!-- Clean Logout Button for Logged In State -->
-    <button id="logout-btn" class="clean-logout-btn" style="display: none;" title="Logout">
+    <button id="logout-btn" class="clean-logout-btn" style="display: none;" title="Logout" aria-label="Logout from your account">
         LOGOUT
     </button>
 
@@ -44,7 +47,7 @@
     <div class="trust-score-layout" id="trust-score-section">
         <!-- Trust Score Header with Tooltip -->
         <div class="trust-score-header">
-            <button class="trust-score-tooltip-btn" id="trust-score-tooltip-btn">?</button>
+            <button class="trust-score-tooltip-btn" id="trust-score-tooltip-btn" aria-label="Learn how trust scores are calculated">?</button>
         </div>
         
         <!-- Centered Trust Score Circle - Larger -->
@@ -104,23 +107,23 @@
         <div id="rating-section" class="ultra-compact-rating" style="display: none;">
             <!-- Rating Guide Button -->
             <div class="rating-guide-container">
-                <button class="rating-guide-btn" id="rating-guide-btn">?</button>
+                <button class="rating-guide-btn" id="rating-guide-btn" aria-label="Show rating guide and instructions">?</button>
             </div>
             
             <!-- Star Rating System - Main Focus with More Space -->
-            <div class="ultra-compact-stars-expanded" id="compact-star-rating">
-                <button class="ultra-star-expanded" data-rating="1" title="1 star - Very Poor">★</button>
-                <button class="ultra-star-expanded" data-rating="2" title="2 stars - Poor">★</button>
-                <button class="ultra-star-expanded" data-rating="3" title="3 stars - Average">★</button>
-                <button class="ultra-star-expanded" data-rating="4" title="4 stars - Good">★</button>
-                <button class="ultra-star-expanded" data-rating="5" title="5 stars - Excellent">★</button>
+            <div class="ultra-compact-stars-expanded" id="compact-star-rating" role="radiogroup" aria-label="Rate this website">
+                <button class="ultra-star-expanded" data-rating="1" title="1 star - Very Poor" aria-label="Rate 1 star - Very Poor" role="radio" aria-checked="false">★</button>
+                <button class="ultra-star-expanded" data-rating="2" title="2 stars - Poor" aria-label="Rate 2 stars - Poor" role="radio" aria-checked="false">★</button>
+                <button class="ultra-star-expanded" data-rating="3" title="3 stars - Average" aria-label="Rate 3 stars - Average" role="radio" aria-checked="false">★</button>
+                <button class="ultra-star-expanded" data-rating="4" title="4 stars - Good" aria-label="Rate 4 stars - Good" role="radio" aria-checked="false">★</button>
+                <button class="ultra-star-expanded" data-rating="5" title="5 stars - Excellent" aria-label="Rate 5 stars - Excellent" role="radio" aria-checked="false">★</button>
             </div>
             
             <!-- Professional Quality Issue Controls -->
-            <div class="ultra-compact-flags">
-                <button class="ultra-flag-btn" data-flag="spam" title="Report spam or excessive ads">Spam/Ads</button>
-                <button class="ultra-flag-btn" data-flag="misleading" title="Report misleading information">Misleading</button>
-                <button class="ultra-flag-btn" data-flag="scam" title="Report suspicious activity">Suspicious</button>
+            <div class="ultra-compact-flags" role="group" aria-label="Report quality issues">
+                <button class="ultra-flag-btn" data-flag="spam" title="Report spam or excessive ads" aria-label="Report as spam or excessive ads" aria-pressed="false">Spam/Ads</button>
+                <button class="ultra-flag-btn" data-flag="misleading" title="Report misleading information" aria-label="Report as misleading information" aria-pressed="false">Misleading</button>
+                <button class="ultra-flag-btn" data-flag="scam" title="Report suspicious activity" aria-label="Report as suspicious or scam activity" aria-pressed="false">Suspicious</button>
             </div>
             
             <!-- Submit button removed - double-tap stars to submit -->
@@ -143,13 +146,13 @@
         </div>
     </div>
 
-    <!-- Ad Space -->
-    <div class="ad-space">
+    <!-- Ad Space - Hidden for now -->
+    <div class="ad-space" style="display: none;">
         <div class="ad-placeholder">Advertisement Space</div>
     </div>
 
-    <!-- Affiliate Links Section -->
-    <div class="affiliate-section">
+    <!-- Affiliate Links Section - Hidden for now -->
+    <div class="affiliate-section" style="display: none;">
         <div class="affiliate-title">Recommended Security Tools</div>
         <div class="affiliate-links">
             <a href="#" class="affiliate-link" id="affiliate-1password">

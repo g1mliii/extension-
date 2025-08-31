@@ -1,4 +1,4 @@
-# URL Trust Rater
+# foglite
 
 A community-driven browser extension that helps users make informed decisions about website trustworthiness through collaborative rating and automated security analysis.
 
@@ -52,7 +52,7 @@ A community-driven browser extension that helps users make informed decisions ab
 
 ### Rating Websites
 1. Navigate to any website
-2. Click the URL Trust Rater extension icon
+2. Click the foglite extension icon
 3. Select a star rating (1-5 stars)
 4. Optionally flag content as spam, misleading, or scam
 5. Click "Submit Rating" to contribute to the community database

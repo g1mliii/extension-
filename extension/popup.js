@@ -218,12 +218,12 @@ function updateScoreBar(score) {
         // For 100%, offset = 0 (full fill)
         const offset = circumference - (percentage / 100) * circumference;
 
-        // Determine color based on score (updated thresholds)
+        // Determine color based on score (updated thresholds with warm yellow highlight)
         let strokeColor;
         if (score >= 75) {
             strokeColor = '#34D399'; // Green for 75%+ (good/excellent)
         } else if (score >= 50) {
-            strokeColor = '#93C5FD'; // Blue for 50-74% (fair/good)
+            strokeColor = '#FCD34D'; // Warm yellow for 50-74% (fair/good)
         } else if (score >= 25) {
             strokeColor = '#FBBF24'; // Yellow for 25-49% (poor/fair)
         } else if (score > 0) {
@@ -863,6 +863,8 @@ function updateUI(session) {
     // No additional event listener needed here
 
     // Logout button event listeners removed
+
+    // Duplicate updateUI function removed - using the one defined earlier
 
     // --- API Interaction ---
     const API_BASE_URL = `${CONFIG.SUPABASE_URL}/functions/v1/url-trust-api`; // Unified API endpoint

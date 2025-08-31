@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "URL Trust Rater",
+  "name": "foglite",
   "version": "1.0.0",
   "description": "Community-driven URL trust rating system. Rate websites and view aggregated trust scores to make informed browsing decisions.",
-  "author": "URL Trust Rater Team",
+  "author": "foglite Team",
   "homepage_url": "https://github.com/g1mliii/url-rater",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "URL Trust Rater",
+    "default_title": "foglite",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
