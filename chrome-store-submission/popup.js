@@ -65,7 +65,7 @@ let activeNotificationId = null;
 
 function showMessage(text, type = 'info', options = {}) {
     try {
-        console.log(`${type.toUpperCase()}: ${text}`);
+        // Message displayed to user
 
         // Throttle duplicate notifications more aggressively
         const now = Date.now();

@@ -21,25 +21,12 @@ export class TrustScoreTooltip {
     }
 
     initializeTooltipSystem() {
-        this.createTriggerButton();
+        // Create tooltip container first so it exists for event binding
         this.createTooltipContainer();
-        this.setupEventListeners();
+        this.createTriggerButton();
         this.injectStyles();
 
-        console.log('TrustScoreTooltip: Tooltip system initialized');
-    }
-
-    createTriggerButton() {
-        // Use the existing trust score tooltip button from HTML
-        this.triggerButton = document.getElementById('trust-score-tooltip-btn');
-        if (!this.triggerButton) {
-            console.warn('TrustScoreTooltip: Trust score tooltip button not found in HTML');
-            return;
-        }
-
-        // Set accessibility attributes
-        this.triggerButton.setAttribute('aria-label', 'Explain trust score');
-        console.log('TrustScoreTooltip: Using existing HTML button');
+        // Tooltip system initialized
     }
 
     createTooltipContainer() {
@@ -49,60 +36,132 @@ export class TrustScoreTooltip {
         this.tooltip.setAttribute('aria-labelledby', 'tooltip-title');
         this.tooltip.setAttribute('aria-describedby', 'tooltip-content');
 
-        this.tooltip.innerHTML = `
-            <div class="tooltip-header">
-                <h3 id="tooltip-title">Trust Score</h3>
-                <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
-            </div>
-            <div class="tooltip-content" id="tooltip-content">
-                <div class="calculation-explanation">
-                    <h4>How It's Calculated</h4>
-                    <div class="calc-item">
-                        <div class="calc-icon">🔒</div>
-                        <div class="calc-text">
-                            <strong>Domain Security (40%)</strong>
-                            <span>SSL certificates, domain age, security scans</span>
-                        </div>
-                    </div>
-                    <div class="calc-item">
-                        <div class="calc-icon">👥</div>
-                        <div class="calc-text">
-                            <strong>Community Ratings (60%)</strong>
-                            <span>User ratings, reports, and feedback</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="score-ranges">
-                    <h4>Score Ranges</h4>
-                    <div class="range-list">
-                        <div class="range-item excellent">
-                            <div class="range-bar"></div>
-                            <span class="range-label">75%+ Excellent</span>
-                        </div>
-                        <div class="range-item good">
-                            <div class="range-bar"></div>
-                            <span class="range-label">50%+ Good</span>
-                        </div>
-                        <div class="range-item fair">
-                            <div class="range-bar"></div>
-                            <span class="range-label">25%+ Fair</span>
-                        </div>
-                        <div class="range-item poor">
-                            <div class="range-bar"></div>
-                            <span class="range-label">&lt;25% Poor</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Header
+        const header = document.createElement('div');
+        header.className = 'tooltip-header';
+
+        const title = document.createElement('h3');
+        title.id = 'tooltip-title';
+        title.textContent = 'Trust Score';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'tooltip-close';
+        closeBtn.setAttribute('aria-label', 'Close tooltip');
+        closeBtn.innerHTML = '&times;'; // Safe entity
+
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+
+        // Content
+        const content = document.createElement('div');
+        content.className = 'tooltip-content';
+        content.id = 'tooltip-content';
+
+        // Calculation Explanation
+        const calcExplanation = document.createElement('div');
+        calcExplanation.className = 'calculation-explanation';
+
+        const calcTitle = document.createElement('h4');
+        calcTitle.textContent = "How It's Calculated";
+        calcExplanation.appendChild(calcTitle);
+
+        // Calc Item 1: Domain Security
+        const calcItem1 = document.createElement('div');
+        calcItem1.className = 'calc-item';
+
+        const calcIcon1 = document.createElement('div');
+        calcIcon1.className = 'calc-icon';
+        calcIcon1.textContent = '🔒';
+
+        const calcText1 = document.createElement('div');
+        calcText1.className = 'calc-text';
+
+        const strong1 = document.createElement('strong');
+        strong1.textContent = 'Domain Security (40%)';
+
+        const span1 = document.createElement('span');
+        span1.textContent = 'SSL certificates, domain age, security scans';
+
+        calcText1.appendChild(strong1);
+        calcText1.appendChild(span1);
+        calcItem1.appendChild(calcIcon1);
+        calcItem1.appendChild(calcText1);
+        calcExplanation.appendChild(calcItem1);
+
+        // Calc Item 2: Community Ratings
+        const calcItem2 = document.createElement('div');
+        calcItem2.className = 'calc-item';
+
+        const calcIcon2 = document.createElement('div');
+        calcIcon2.className = 'calc-icon';
+        calcIcon2.textContent = '👥';
+
+        const calcText2 = document.createElement('div');
+        calcText2.className = 'calc-text';
+
+        const strong2 = document.createElement('strong');
+        strong2.textContent = 'Community Ratings (60%)';
+
+        const span2 = document.createElement('span');
+        span2.textContent = 'User ratings, reports, and feedback';
+
+        calcText2.appendChild(strong2);
+        calcText2.appendChild(span2);
+        calcItem2.appendChild(calcIcon2);
+        calcItem2.appendChild(calcText2);
+        calcExplanation.appendChild(calcItem2);
+
+        // Score Ranges
+        const scoreRanges = document.createElement('div');
+        scoreRanges.className = 'score-ranges';
+
+        const rangesTitle = document.createElement('h4');
+        rangesTitle.textContent = 'Score Ranges';
+        scoreRanges.appendChild(rangesTitle);
+
+        const rangeList = document.createElement('div');
+        rangeList.className = 'range-list';
+
+        const ranges = [
+            { class: 'excellent', label: '75%+ Excellent' },
+            { class: 'good', label: '50%+ Good' },
+            { class: 'fair', label: '25%+ Fair' },
+            { class: 'poor', label: '<25% Poor' }
+        ];
+
+        ranges.forEach(range => {
+            const item = document.createElement('div');
+            item.className = `range-item ${range.class}`;
+
+            const bar = document.createElement('div');
+            bar.className = 'range-bar';
+
+            const label = document.createElement('span');
+            label.className = 'range-label';
+            label.textContent = range.label;
+
+            item.appendChild(bar);
+            item.appendChild(label);
+            rangeList.appendChild(item);
+        });
+        scoreRanges.appendChild(rangeList);
+
+        content.appendChild(calcExplanation);
+        content.appendChild(scoreRanges);
+
+        this.tooltip.appendChild(header);
+        this.tooltip.appendChild(content);
 
         document.body.appendChild(this.tooltip);
     }
 
-    setupEventListeners() {
-        if (!this.triggerButton || !this.tooltip) return;
-
+    createTriggerButton() {
+        // Use the existing trust score tooltip button from HTML
+        this.triggerButton = document.getElementById('trust-score-tooltip-btn');
+        if (!this.triggerButton) {
+            console.warn('TrustScoreTooltip: Trust score tooltip button not found in HTML');
+            return;
+        }
         // Show tooltip on button click
         this.triggerButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -110,10 +169,19 @@ export class TrustScoreTooltip {
         });
 
         // Close tooltip on close button click
-        const closeBtn = this.tooltip.querySelector('.tooltip-close');
-        closeBtn.addEventListener('click', () => {
-            this.hideTooltip();
-        });
+        if (this.tooltip) {
+            const closeBtn = this.tooltip.querySelector('.tooltip-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    this.hideTooltip();
+                });
+            }
+
+            // Prevent tooltip from closing when clicking inside
+            this.tooltip.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
 
         // Close on escape key
         document.addEventListener('keydown', (e) => {
@@ -124,14 +192,9 @@ export class TrustScoreTooltip {
 
         // Close on click outside
         document.addEventListener('click', (e) => {
-            if (this.isVisible && !this.tooltip.contains(e.target) && e.target !== this.triggerButton) {
+            if (this.isVisible && this.tooltip && !this.tooltip.contains(e.target) && e.target !== this.triggerButton) {
                 this.hideTooltip();
             }
-        });
-
-        // Prevent tooltip from closing when clicking inside
-        this.tooltip.addEventListener('click', (e) => {
-            e.stopPropagation();
         });
     }
 
@@ -180,12 +243,6 @@ export class TrustScoreTooltip {
                     inset 0 1px 0 rgba(255, 255, 255, 0.4);
             }
             
-            .trust-score-help-btn:active {
-                transform: scale(0.95);
-                transition: all 0.1s ease;
-            }
-            
-            /* Trust Score Tooltip */
             .trust-score-tooltip {
                 position: fixed;
                 top: 50%;
@@ -208,11 +265,14 @@ export class TrustScoreTooltip {
                 pointer-events: none;
                 transition: all var(--transition-normal);
                 overflow: hidden;
+                /* GPU Acceleration */
+                will-change: transform, opacity;
+                transform: translateZ(0);
             }
             
             .trust-score-tooltip.show {
                 opacity: 1;
-                pointer-events: all;
+                pointer-events: auto;
                 transform: translate(-50%, -50%) scale(1);
             }
             
@@ -315,8 +375,6 @@ export class TrustScoreTooltip {
                 font-size: 11px;
             }
             
-
-            
             /* Score Ranges */
             .range-list {
                 display: flex;
@@ -367,8 +425,6 @@ export class TrustScoreTooltip {
                 font-size: 11px;
             }
             
-
-            
             /* Animations */
             @keyframes tooltipSlideIn {
                 0% {
@@ -416,7 +472,7 @@ export class TrustScoreTooltip {
         this.currentData = data;
 
         // Tooltip no longer displays current score, just shows explanation
-        console.log(`TrustScoreTooltip: Score updated to ${score}% (tooltip shows explanation only)`);
+        // Score updated (tooltip shows explanation only)
     }
 
     getScoreRange(score) {
@@ -441,7 +497,7 @@ export class TrustScoreTooltip {
         const closeBtn = this.tooltip.querySelector('.tooltip-close');
         if (closeBtn) closeBtn.focus();
 
-        console.log('TrustScoreTooltip: Tooltip shown');
+        // Tooltip shown
     }
 
     hideTooltip() {
@@ -459,7 +515,7 @@ export class TrustScoreTooltip {
         // Return focus to trigger button
         if (this.triggerButton) this.triggerButton.focus();
 
-        console.log('TrustScoreTooltip: Tooltip hidden');
+        // Tooltip hidden
     }
 
     toggleTooltip() {
@@ -512,7 +568,7 @@ export class TrustScoreTooltip {
             styleSheet.remove();
         }
 
-        console.log('TrustScoreTooltip: Cleanup completed');
+        // Cleanup completed
     }
 }
 
@@ -522,8 +578,8 @@ export const trustScoreTooltip = new TrustScoreTooltip();
 // Auto-initialize on DOM content loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('TrustScoreTooltip: Trust score tooltip system ready');
+        // Trust score tooltip system ready
     });
 } else {
-    console.log('TrustScoreTooltip: Trust score tooltip system ready');
+    // Trust score tooltip system ready
 }

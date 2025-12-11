@@ -375,7 +375,7 @@ class WarningIndicatorSystem {
         document.head.appendChild(styleSheet);
     }
     
-    // Public method to get current warnings for testing
+    // Public method to get current warnings
     getActiveWarnings() {
         return Array.from(this.activeWarnings.keys());
     }

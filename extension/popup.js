@@ -65,12 +65,12 @@ let activeNotificationId = null;
 
 function showMessage(text, type = 'info', options = {}) {
     try {
-        console.log(`${type.toUpperCase()}: ${text}`);
+        // Message logged
 
         // Throttle duplicate notifications more aggressively
         const now = Date.now();
         if (text === lastNotificationText && (now - lastNotificationTime) < NOTIFICATION_THROTTLE_MS) {
-            console.log('Notification throttled (duplicate):', text);
+            // Notification throttled (duplicate)
             return activeNotificationId;
         }
 
@@ -89,7 +89,7 @@ function showMessage(text, type = 'info', options = {}) {
         if (!options.force && skipPatterns.some(pattern => pattern.test(text))) {
             // Allow loading messages only if no recent notification
             if (text.includes('Loading') && (now - lastNotificationTime) < 1500) {
-                console.log('Notification skipped (low priority):', text);
+                // Notification skipped (low priority)
                 return activeNotificationId;
             }
         }
@@ -117,8 +117,8 @@ function showMessage(text, type = 'info', options = {}) {
             context: 'Showing notification message'
         });
 
-        // Fallback: console log and basic alert for critical errors
-        console.log(`FALLBACK MESSAGE (${type}): ${text}`);
+        // Fallback: basic alert for critical errors
+        // Fallback message
         if (type === 'error') {
             alert(`Error: ${text}`);
         }
@@ -399,7 +399,7 @@ async function fetchUrlStatsSingle(url) {
             const result = await getSession();
             session = result.session;
         } catch (error) {
-            console.log('Session check completed (proceeding as anonymous)');
+            // Session check completed (proceeding as anonymous)
             session = null;
         }
         const anonKey = CONFIG.SUPABASE_ANON_KEY;
@@ -420,11 +420,7 @@ async function fetchUrlStatsSingle(url) {
 
         const requestId = generateRequestId();
 
-        console.log('Batch fetch request:', {
-            requestId,
-            url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
-            authenticated: !!session
-        });
+        // Batch fetch request
 
         // Add timeout to prevent hanging requests
         const controller = new AbortController();
@@ -488,14 +484,7 @@ async function fetchUrlStatsSingle(url) {
 
             const data = await response.json();
 
-            console.log('Batch request successful:', {
-                requestId,
-                status: response.status,
-                dataSource: data.data_source,
-                cacheStatus: data.cache_status,
-                trustScore: data.final_trust_score || data.trust_score,
-                ratingCount: data.rating_count
-            });
+            // Batch request successful
 
             // Cache the response
             const cacheData = {
@@ -545,139 +534,60 @@ async function fetchUrlStatsSingle(url) {
 
 // --- UI State Management ---
 function updateUI(session) {
-        const header = document.getElementById('main-header');
-        const authSection = document.getElementById('auth-section');
-        const headerLogin = document.getElementById('header-login');
+    const header = document.getElementById('main-header');
+    const authSection = document.getElementById('auth-section');
+    const headerLogin = document.getElementById('header-login');
 
-        if (session) {
-            // User is logged in - Hide login form, show rating section
-            if (header) header.className = 'header logged-in';
-            if (authSection) authSection.className = 'hidden';
-            if (headerLogin) headerLogin.style.display = 'none';
-            if (ratingSection) ratingSection.style.display = 'block';
+    if (session) {
+        // User is logged in - Hide login form, show rating section
+        if (header) header.className = 'header logged-in';
+        if (authSection) authSection.className = 'hidden';
+        if (headerLogin) headerLogin.style.display = 'none';
+        if (ratingSection) ratingSection.style.display = 'block';
 
-            // Initialize compact rating manager now that elements are visible
-            compactRatingManager.forceInit();
+        // Initialize compact rating manager now that elements are visible
+        compactRatingManager.forceInit();
 
-            // Show user info in rating section
-            if (authStatusDiv) {
-                authStatusDiv.textContent = `✓ Logged in as: ${session.user.email}`;
-                authStatusDiv.style.display = 'block';
-                authStatusDiv.style.color = 'rgba(255, 255, 255, 0.8)';
-                authStatusDiv.style.fontSize = '0.9em';
-                authStatusDiv.style.marginBottom = '10px';
-            }
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-
-            // Enable rating form
-            if (ratingScoreSelect) ratingScoreSelect.disabled = false;
-            if (isSpamCheckbox) isSpamCheckbox.disabled = false;
-            if (isMisleadingCheckbox) isMisleadingCheckbox.disabled = false;
-            if (isScamCheckbox) isScamCheckbox.disabled = false;
-            if (submitRatingBtn) {
-                submitRatingBtn.disabled = false;
-                submitRatingBtn.textContent = 'Submit Rating';
-            }
-
-            // Message clearing removed
-        } else {
-            // User is not logged in - show login form, hide rating section
-            if (header) header.className = 'header logged-out';
-            if (headerLogin) headerLogin.style.display = 'flex';
-            if (authSection) authSection.style.display = 'block';
-            if (ratingSection) ratingSection.style.display = 'none';
-
-            if (authStatusDiv) {
-                authStatusDiv.textContent = 'Login or sign up to submit ratings';
-                authStatusDiv.style.color = 'rgba(255, 255, 255, 0.6)';
-                authStatusDiv.style.fontSize = '1em';
-            }
-            if (logoutBtn) logoutBtn.style.display = 'none';
+        // Show user info in rating section
+        if (authStatusDiv) {
+            authStatusDiv.textContent = `✓ Logged in as: ${session.user.email}`;
+            authStatusDiv.style.display = 'block';
+            authStatusDiv.style.color = 'rgba(255, 255, 255, 0.8)';
+            authStatusDiv.style.fontSize = '0.9em';
+            authStatusDiv.style.marginBottom = '10px';
         }
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+
+        // Enable rating form
+        if (ratingScoreSelect) ratingScoreSelect.disabled = false;
+        if (isSpamCheckbox) isSpamCheckbox.disabled = false;
+        if (isMisleadingCheckbox) isMisleadingCheckbox.disabled = false;
+        if (isScamCheckbox) isScamCheckbox.disabled = false;
+        if (submitRatingBtn) {
+            submitRatingBtn.disabled = false;
+            submitRatingBtn.textContent = 'Submit Rating';
+        }
+
+        // Message clearing removed
+    } else {
+        // User is not logged in - show login form, hide rating section
+        if (header) header.className = 'header logged-out';
+        if (headerLogin) headerLogin.style.display = 'flex';
+        if (authSection) authSection.style.display = 'block';
+        if (ratingSection) ratingSection.style.display = 'none';
+
+        if (authStatusDiv) {
+            authStatusDiv.textContent = 'Login or sign up to submit ratings';
+            authStatusDiv.style.color = 'rgba(255, 255, 255, 0.6)';
+            authStatusDiv.style.fontSize = '1em';
+        }
+        if (logoutBtn) logoutBtn.style.display = 'none';
     }
+}
 
-    // --- Authentication Handlers ---
-    loginBtn.addEventListener('click', async () => {
-        try {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            if (!email || !password) {
-                showMessage('Email and password are required.', 'error');
-                return;
-            }
-
-            // Set loading state for login button with error handling
-            try {
-                buttonStateManager.setState(loginBtn, 'loading', {
-                    loadingText: 'Logging in...'
-                });
-            } catch (buttonError) {
-                errorHandler.handleComponentError('button-state-manager', buttonError, {
-                    context: 'Setting login button loading state'
-                });
-            }
-
-            // Disable signup button during login
-            signupBtn.disabled = true;
-            // Button state shows loading - no notification needed
-
-            try {
-                const { user, session, error } = await signIn(email, password);
-                if (error) {
-                    if (error.message.includes('Email not confirmed')) {
-                        showMessage('Please check your email and click the confirmation link before logging in.', 'error');
-                        resendBtn.style.display = 'inline-block';
-                        buttonStateManager.setState(loginBtn, 'error', {
-                            errorText: 'Email not confirmed',
-                            duration: 3000
-                        });
-                    } else {
-                        showMessage(`Login failed: ${error.message}`, 'error');
-                        buttonStateManager.setState(loginBtn, 'error', {
-                            errorText: 'Login failed',
-                            duration: 3000
-                        });
-                    }
-                    console.error('Login error:', error);
-                } else {
-                    showMessage('Login successful!', 'success');
-                    resendBtn.style.display = 'none'; // Hide resend button on successful login
-                    buttonStateManager.setState(loginBtn, 'success', {
-                        successText: 'Login successful!',
-                        duration: 2000
-                    });
-                    updateUI(session);
-                    // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
-                }
-            } finally {
-                // Re-enable signup button
-                signupBtn.disabled = false;
-            }
-
-        } catch (error) {
-            errorHandler.handleComponentError('authentication', error, {
-                context: 'Login button click handler',
-                email: email ? 'provided' : 'missing'
-            });
-
-            // Fallback: show error and reset button
-            showMessage('Login failed due to an error. Please try again.', 'error');
-            signupBtn.disabled = false;
-
-            try {
-                buttonStateManager.setState(loginBtn, 'error', {
-                    errorText: 'Login failed',
-                    duration: 3000
-                });
-            } catch (buttonError) {
-                // Last resort: reset button manually
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Login';
-            }
-        }
-    });
-
-    signupBtn.addEventListener('click', async () => {
+// --- Authentication Handlers ---
+loginBtn.addEventListener('click', async () => {
+    try {
         const email = emailInput.value;
         const password = passwordInput.value;
         if (!email || !password) {
@@ -685,1072 +595,1120 @@ function updateUI(session) {
             return;
         }
 
-        // Set loading state for signup button
-        buttonStateManager.setState(signupBtn, 'loading', {
-            loadingText: 'Creating account...'
-        });
+        // Set loading state for login button with error handling
+        try {
+            buttonStateManager.setState(loginBtn, 'loading', {
+                loadingText: 'Logging in...'
+            });
+        } catch (buttonError) {
+            errorHandler.handleComponentError('button-state-manager', buttonError, {
+                context: 'Setting login button loading state'
+            });
+        }
 
-        // Disable login button during signup
-        loginBtn.disabled = true;
+        // Disable signup button during login
+        signupBtn.disabled = true;
         // Button state shows loading - no notification needed
 
         try {
-            const { user, session, error } = await signUp(email, password);
+            const { user, session, error } = await signIn(email, password);
             if (error) {
-                showMessage(`Sign up failed: ${error.message}`, 'error');
-                buttonStateManager.setState(signupBtn, 'error', {
-                    errorText: 'Sign up failed',
-                    duration: 3000
-                });
-                console.error('Sign up error:', error);
-            } else {
-                if (session) {
-                    // User is immediately logged in (email already confirmed)
-                    showMessage('Account created and logged in successfully!', 'success');
-                    buttonStateManager.setState(signupBtn, 'success', {
-                        successText: 'Account created!',
-                        duration: 2000
-                    });
-                    updateUI(session);
-                    // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
-                } else {
-                    // Email confirmation required
-                    showMessage('Account created! Check your email for a confirmation link. After clicking it, return here to log in.', 'success');
-                    buttonStateManager.setState(signupBtn, 'success', {
-                        successText: 'Check your email',
-                        duration: 4000
-                    });
-                    // Show resend button
+                if (error.message.includes('Email not confirmed')) {
+                    showMessage('Please check your email and click the confirmation link before logging in.', 'error');
                     resendBtn.style.display = 'inline-block';
-                    // Clear the password field for security
-                    passwordInput.value = '';
+                    buttonStateManager.setState(loginBtn, 'error', {
+                        errorText: 'Email not confirmed',
+                        duration: 3000
+                    });
+                } else {
+                    showMessage(`Login failed: ${error.message}`, 'error');
+                    buttonStateManager.setState(loginBtn, 'error', {
+                        errorText: 'Login failed',
+                        duration: 3000
+                    });
                 }
+                console.error('Login error:', error);
+            } else {
+                showMessage('Login successful!', 'success');
+                resendBtn.style.display = 'none'; // Hide resend button on successful login
+                buttonStateManager.setState(loginBtn, 'success', {
+                    successText: 'Login successful!',
+                    duration: 2000
+                });
+                updateUI(session);
+                // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
             }
         } finally {
-            // Re-enable login button
+            // Re-enable signup button
+            signupBtn.disabled = false;
+        }
+
+    } catch (error) {
+        errorHandler.handleComponentError('authentication', error, {
+            context: 'Login button click handler',
+            email: email ? 'provided' : 'missing'
+        });
+
+        // Fallback: show error and reset button
+        showMessage('Login failed due to an error. Please try again.', 'error');
+        signupBtn.disabled = false;
+
+        try {
+            buttonStateManager.setState(loginBtn, 'error', {
+                errorText: 'Login failed',
+                duration: 3000
+            });
+        } catch (buttonError) {
+            // Last resort: reset button manually
             loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
         }
+    }
+});
+
+signupBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    if (!email || !password) {
+        showMessage('Email and password are required.', 'error');
+        return;
+    }
+
+    // Set loading state for signup button
+    buttonStateManager.setState(signupBtn, 'loading', {
+        loadingText: 'Creating account...'
     });
 
-    resendBtn.addEventListener('click', async () => {
-        const email = emailInput.value;
-        if (!email) {
-            showMessage('Please enter your email address.', 'error');
-            return;
-        }
+    // Disable login button during signup
+    loginBtn.disabled = true;
+    // Button state shows loading - no notification needed
 
-        buttonStateManager.setState(resendBtn, 'loading', {
-            loadingText: 'Sending...'
-        });
-
-        try {
-            const { error } = await resendConfirmation(email);
-            if (error) {
-                showMessage(`Failed to resend: ${error.message}`, 'error');
-                buttonStateManager.setState(resendBtn, 'error', {
-                    errorText: 'Failed to send',
-                    duration: 3000
+    try {
+        const { user, session, error } = await signUp(email, password);
+        if (error) {
+            showMessage(`Sign up failed: ${error.message}`, 'error');
+            buttonStateManager.setState(signupBtn, 'error', {
+                errorText: 'Sign up failed',
+                duration: 3000
+            });
+            console.error('Sign up error:', error);
+        } else {
+            if (session) {
+                // User is immediately logged in (email already confirmed)
+                showMessage('Account created and logged in successfully!', 'success');
+                buttonStateManager.setState(signupBtn, 'success', {
+                    successText: 'Account created!',
+                    duration: 2000
                 });
+                updateUI(session);
+                // Don't call fetchCurrentUrlAndStats here - auth state change will handle it
             } else {
-                showMessage('Confirmation email sent! Please check your inbox.', 'success');
-                buttonStateManager.setState(resendBtn, 'success', {
-                    successText: 'Email sent!',
-                    duration: 3000
+                // Email confirmation required
+                showMessage('Account created! Check your email for a confirmation link. After clicking it, return here to log in.', 'success');
+                buttonStateManager.setState(signupBtn, 'success', {
+                    successText: 'Check your email',
+                    duration: 4000
                 });
+                // Show resend button
+                resendBtn.style.display = 'inline-block';
+                // Clear the password field for security
+                passwordInput.value = '';
             }
-        } catch (error) {
+        }
+    } finally {
+        // Re-enable login button
+        loginBtn.disabled = false;
+    }
+});
+
+resendBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    if (!email) {
+        showMessage('Please enter your email address.', 'error');
+        return;
+    }
+
+    buttonStateManager.setState(resendBtn, 'loading', {
+        loadingText: 'Sending...'
+    });
+
+    try {
+        const { error } = await resendConfirmation(email);
+        if (error) {
+            showMessage(`Failed to resend: ${error.message}`, 'error');
             buttonStateManager.setState(resendBtn, 'error', {
-                errorText: 'Network error',
+                errorText: 'Failed to send',
+                duration: 3000
+            });
+        } else {
+            showMessage('Confirmation email sent! Please check your inbox.', 'success');
+            buttonStateManager.setState(resendBtn, 'success', {
+                successText: 'Email sent!',
                 duration: 3000
             });
         }
+    } catch (error) {
+        buttonStateManager.setState(resendBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
+    }
+});
+
+forgotPasswordBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    if (!email) {
+        showMessage('Please enter your email address first.', 'error');
+        return;
+    }
+
+    buttonStateManager.setState(forgotPasswordBtn, 'loading', {
+        loadingText: 'Sending...'
     });
 
-    forgotPasswordBtn.addEventListener('click', async () => {
-        const email = emailInput.value;
-        if (!email) {
-            showMessage('Please enter your email address first.', 'error');
-            return;
+    try {
+        const { error } = await resetPassword(email);
+        if (error) {
+            showMessage(`Failed to send reset email: ${error.message}`, 'error');
+            buttonStateManager.setState(forgotPasswordBtn, 'error', {
+                errorText: 'Failed to send',
+                duration: 3000
+            });
+        } else {
+            showMessage('Password reset email sent! Check your inbox.', 'success');
+            buttonStateManager.setState(forgotPasswordBtn, 'success', {
+                successText: 'Email sent!',
+                duration: 3000
+            });
+        }
+    } catch (error) {
+        buttonStateManager.setState(forgotPasswordBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
+    }
+});
+
+// Refresh button removed - functionality integrated into tooltip button
+
+// Smart caching to reduce API calls
+let statsCache = new Map(); // url -> {data, timestamp}
+const STATS_CACHE_DURATION_MS = 300000; // 5 minutes cache (matches aggregation frequency)
+const LOCALSTORAGE_PREFIX = 'urlrater_stats_';
+
+// Load cache from localStorage on startup
+function loadCacheFromStorage() {
+    try {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith(LOCALSTORAGE_PREFIX));
+        keys.forEach(key => {
+            const data = JSON.parse(localStorage.getItem(key));
+            const url = key.replace(LOCALSTORAGE_PREFIX, '');
+
+            // Only load if not expired
+            if (data && (Date.now() - data.timestamp) < STATS_CACHE_DURATION_MS) {
+                statsCache.set(url, data);
+            } else {
+                // Clean up expired entries
+                localStorage.removeItem(key);
+            }
+        });
+        // Loaded cached stats from localStorage
+    } catch (error) {
+        console.error('Error loading cache from localStorage:', error);
+    }
+}
+
+// Save cache entry to localStorage
+function saveCacheToStorage(url, cacheData) {
+    try {
+        localStorage.setItem(LOCALSTORAGE_PREFIX + url, JSON.stringify(cacheData));
+    } catch (error) {
+        console.error('Error saving cache to localStorage:', error);
+        // If storage is full, clean up old entries
+        cleanupOldCacheEntries();
+    }
+}
+
+// Clean up old cache entries from localStorage
+function cleanupOldCacheEntries() {
+    try {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith(LOCALSTORAGE_PREFIX));
+        const now = Date.now();
+
+        keys.forEach(key => {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (!data || (now - data.timestamp) > STATS_CACHE_DURATION_MS) {
+                localStorage.removeItem(key);
+            }
+        });
+    } catch (error) {
+        console.error('Error cleaning up cache:', error);
+    }
+}
+
+
+
+// Trust score tooltip button is handled by the TrustScoreTooltip class itself
+// No additional event listener needed here
+
+// Logout button event listeners removed
+
+// Duplicate updateUI function removed - using the one defined earlier
+
+// --- API Interaction ---
+const API_BASE_URL = `${CONFIG.SUPABASE_URL}/functions/v1/url-trust-api`; // Unified API endpoint
+
+// Batch request queue for efficiency
+let batchQueue = new Set();
+let batchTimeout = null;
+const BATCH_DELAY_MS = 100; // Wait 100ms to collect multiple requests
+
+// Request ID generation for debugging
+function generateRequestId() {
+    return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+async function fetchUrlStats(url, forceRefresh = false) {
+    // Prevent multiple simultaneous requests for the same URL
+    if (isLoadingStats && !forceRefresh) {
+        // Already loading stats, skipping duplicate request
+        return;
+    }
+
+    isLoadingStats = true;
+
+    try {
+        // Check cache first (unless force refresh)
+        if (!forceRefresh) {
+            const cached = statsCache.get(url);
+            if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION_MS) {
+                // Using cached stats
+                updateStatsDisplay(cached.data);
+                // Skip notification for cached data to reduce noise
+                isLoadingStats = false;
+                return;
+            } else if (cached) {
+                // Cache exists but is stale - remove it
+                statsCache.delete(url);
+                localStorage.removeItem(LOCALSTORAGE_PREFIX + url);
+            }
         }
 
-        buttonStateManager.setState(forgotPasswordBtn, 'loading', {
-            loadingText: 'Sending...'
+        // For single requests, use batch system for efficiency
+        if (!forceRefresh) {
+            const result = await fetchUrlStatsBatched(url);
+            isLoadingStats = false;
+            return result;
+        }
+
+        // Loading is shown in UI - no notification needed
+
+        // Get session with improved error handling
+        let session = null;
+        try {
+            const result = await getSession();
+            session = result.session;
+        } catch (error) {
+            // Session check completed (proceeding as anonymous)
+            session = null;
+        }
+
+        const anonKey = CONFIG.SUPABASE_ANON_KEY;
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'apikey': anonKey
+        };
+
+        // Only add Authorization header if user is logged in
+        if (session && session.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        } else {
+            // For unauthenticated requests, use anon key in Authorization header
+            headers['Authorization'] = `Bearer ${anonKey}`;
+        }
+
+        const requestId = generateRequestId();
+
+        // Making fetch request: ${requestId}
+
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+        const response = await fetch(`${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`, {
+            headers: {
+                ...headers,
+                'X-Request-ID': requestId
+            },
+            signal: controller.signal
         });
 
-        try {
-            const { error } = await resetPassword(email);
-            if (error) {
-                showMessage(`Failed to send reset email: ${error.message}`, 'error');
-                buttonStateManager.setState(forgotPasswordBtn, 'error', {
-                    errorText: 'Failed to send',
-                    duration: 3000
-                });
-            } else {
-                showMessage('Password reset email sent! Check your inbox.', 'success');
-                buttonStateManager.setState(forgotPasswordBtn, 'success', {
-                    successText: 'Email sent!',
-                    duration: 3000
-                });
-            }
-        } catch (error) {
-            buttonStateManager.setState(forgotPasswordBtn, 'error', {
-                errorText: 'Network error',
-                duration: 3000
-            });
-        }
-    });
+        clearTimeout(timeoutId);
 
-    // Refresh button removed - functionality integrated into tooltip button
+        // Response received: ${response.status}
 
-    // Smart caching to reduce API calls
-    let statsCache = new Map(); // url -> {data, timestamp}
-    const STATS_CACHE_DURATION_MS = 300000; // 5 minutes cache (matches aggregation frequency)
-    const LOCALSTORAGE_PREFIX = 'urlrater_stats_';
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({
+                error: 'Network error',
+                code: 'NetworkError',
+                timestamp: new Date().toISOString()
+            }));
 
-    // Load cache from localStorage on startup
-    function loadCacheFromStorage() {
-        try {
-            const keys = Object.keys(localStorage).filter(key => key.startsWith(LOCALSTORAGE_PREFIX));
-            keys.forEach(key => {
-                const data = JSON.parse(localStorage.getItem(key));
-                const url = key.replace(LOCALSTORAGE_PREFIX, '');
+            // Handle standardized error responses from unified API
+            const errorMsg = errorData.error || `HTTP ${response.status}`;
+            const errorCode = errorData.code || 'UnknownError';
 
-                // Only load if not expired
-                if (data && (Date.now() - data.timestamp) < STATS_CACHE_DURATION_MS) {
-                    statsCache.set(url, data);
-                } else {
-                    // Clean up expired entries
-                    localStorage.removeItem(key);
-                }
-            });
-            console.log(`Loaded ${statsCache.size} cached stats from localStorage`);
-        } catch (error) {
-            console.error('Error loading cache from localStorage:', error);
-        }
-    }
-
-    // Save cache entry to localStorage
-    function saveCacheToStorage(url, cacheData) {
-        try {
-            localStorage.setItem(LOCALSTORAGE_PREFIX + url, JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error saving cache to localStorage:', error);
-            // If storage is full, clean up old entries
-            cleanupOldCacheEntries();
-        }
-    }
-
-    // Clean up old cache entries from localStorage
-    function cleanupOldCacheEntries() {
-        try {
-            const keys = Object.keys(localStorage).filter(key => key.startsWith(LOCALSTORAGE_PREFIX));
-            const now = Date.now();
-
-            keys.forEach(key => {
-                const data = JSON.parse(localStorage.getItem(key));
-                if (!data || (now - data.timestamp) > STATS_CACHE_DURATION_MS) {
-                    localStorage.removeItem(key);
-                }
-            });
-        } catch (error) {
-            console.error('Error cleaning up cache:', error);
-        }
-    }
-
-
-
-    // Trust score tooltip button is handled by the TrustScoreTooltip class itself
-    // No additional event listener needed here
-
-    // Logout button event listeners removed
-
-    // Duplicate updateUI function removed - using the one defined earlier
-
-    // --- API Interaction ---
-    const API_BASE_URL = `${CONFIG.SUPABASE_URL}/functions/v1/url-trust-api`; // Unified API endpoint
-
-    // Batch request queue for efficiency
-    let batchQueue = new Set();
-    let batchTimeout = null;
-    const BATCH_DELAY_MS = 100; // Wait 100ms to collect multiple requests
-
-    // Request ID generation for debugging
-    function generateRequestId() {
-        return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    async function fetchUrlStats(url, forceRefresh = false) {
-        // Prevent multiple simultaneous requests for the same URL
-        if (isLoadingStats && !forceRefresh) {
-            console.log('Already loading stats, skipping duplicate request');
-            return;
-        }
-
-        isLoadingStats = true;
-
-        try {
-            // Check cache first (unless force refresh)
-            if (!forceRefresh) {
-                const cached = statsCache.get(url);
-                if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION_MS) {
-                    console.log('Using cached stats for', url);
-                    updateStatsDisplay(cached.data);
-                    // Skip notification for cached data to reduce noise
-                    isLoadingStats = false;
-                    return;
-                } else if (cached) {
-                    // Cache exists but is stale - remove it
-                    statsCache.delete(url);
-                    localStorage.removeItem(LOCALSTORAGE_PREFIX + url);
-                }
-            }
-
-            // For single requests, use batch system for efficiency
-            if (!forceRefresh) {
-                const result = await fetchUrlStatsBatched(url);
-                isLoadingStats = false;
-                return result;
-            }
-
-            // Loading is shown in UI - no notification needed
-
-            // Get session with improved error handling
-            let session = null;
-            try {
-                const result = await getSession();
-                session = result.session;
-            } catch (error) {
-                console.log('Session check completed (proceeding as anonymous)');
-                session = null;
-            }
-
-            const anonKey = CONFIG.SUPABASE_ANON_KEY;
-
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'apikey': anonKey
-            };
-
-            // Only add Authorization header if user is logged in
-            if (session && session.access_token) {
-                headers['Authorization'] = `Bearer ${session.access_token}`;
-            } else {
-                // For unauthenticated requests, use anon key in Authorization header
-                headers['Authorization'] = `Bearer ${anonKey}`;
-            }
-
-            const requestId = generateRequestId();
-
-            console.log('Making fetch request:', {
-                requestId,
-                url: `${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`,
-                authenticated: !!session,
-                headers: { ...headers, Authorization: '[REDACTED]' }
-            });
-
-            // Add timeout to prevent hanging requests
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-            const response = await fetch(`${API_BASE_URL}/url-stats?url=${encodeURIComponent(url)}`, {
-                headers: {
-                    ...headers,
-                    'X-Request-ID': requestId
-                },
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            console.log('Response received:', {
+            console.error('API Error:', {
                 status: response.status,
-                ok: response.ok,
+                error: errorMsg,
+                code: errorCode,
+                timestamp: errorData.timestamp,
+                url: url,
                 requestId
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({
-                    error: 'Network error',
-                    code: 'NetworkError',
-                    timestamp: new Date().toISOString()
-                }));
-
-                // Handle standardized error responses from unified API
-                const errorMsg = errorData.error || `HTTP ${response.status}`;
-                const errorCode = errorData.code || 'UnknownError';
-
-                console.error('API Error:', {
-                    status: response.status,
-                    error: errorMsg,
-                    code: errorCode,
-                    timestamp: errorData.timestamp,
-                    url: url,
-                    requestId
-                });
-
-                // Handle 406 errors specifically
-                if (response.status === 406) {
-                    console.warn('406 Not Acceptable - API may be processing request, retrying...');
-                    // Don't show error to user for 406, just log it and use fallback
-                    clearStatsDisplay();
-                    // Skip loading message for fallback to reduce noise
-                    return;
-                }
-
-                // Provide user-friendly error messages based on error codes
-                let userMessage = `Failed to fetch trust score: ${errorMsg}`;
-                if (errorCode === 'ValidationError') {
-                    userMessage = 'Invalid URL format. Please try a different URL.';
-                } else if (errorCode === 'AuthError') {
-                    userMessage = 'Authentication issue. Please try refreshing the page.';
-                } else if (errorCode === 'RateLimitError') {
-                    userMessage = 'Too many requests. Please wait a moment and try again.';
-                } else if (errorCode === 'DatabaseError') {
-                    userMessage = 'Database temporarily unavailable. Please try again later.';
-                }
-
-                showMessage(userMessage, 'error');
+            // Handle 406 errors specifically
+            if (response.status === 406) {
+                console.warn('406 Not Acceptable - API may be processing request, retrying...');
+                // Don't show error to user for 406, just log it and use fallback
                 clearStatsDisplay();
+                // Skip loading message for fallback to reduce noise
                 return;
             }
 
-            const data = await response.json();
-            console.log('Successful response:', {
-                requestId,
-                status: response.status,
-                dataSource: data.data_source,
-                cacheStatus: data.cache_status,
-                trustScore: data.final_trust_score || data.trust_score,
-                ratingCount: data.rating_count
-            });
-
-            // Cache the response
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            statsCache.set(url, cacheData);
-            saveCacheToStorage(url, cacheData);
-
-            updateStatsDisplay(data);
-            // Only show success for force refresh, not regular loads
-            if (forceRefresh) {
-                showMessage('Trust score refreshed!', 'success');
-            }
-
-            isLoadingStats = false;
-        } catch (error) {
-            console.error('Error fetching URL stats:', {
-                error: error.message,
-                stack: error.stack,
-                url: url,
-                timestamp: new Date().toISOString()
-            });
-
-            // Handle different types of network and runtime errors
-            let userMessage = 'Failed to fetch trust score';
-
-            if (error.name === 'AbortError') {
-                userMessage = 'Request timed out. Please try again.';
-            } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                userMessage = 'Network connection error. Please check your internet connection.';
-            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                userMessage = 'Authentication error. Please try logging in again.';
-            } else if (error.message.includes('429') || error.message.includes('rate limit')) {
-                userMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
-                userMessage = 'Server error. Please try again later.';
-            } else if (error.message.includes('timeout')) {
-                userMessage = 'Request timed out. Please try again.';
-            } else {
-                userMessage = `Network error: ${error.message}`;
+            // Provide user-friendly error messages based on error codes
+            let userMessage = `Failed to fetch trust score: ${errorMsg}`;
+            if (errorCode === 'ValidationError') {
+                userMessage = 'Invalid URL format. Please try a different URL.';
+            } else if (errorCode === 'AuthError') {
+                userMessage = 'Authentication issue. Please try refreshing the page.';
+            } else if (errorCode === 'RateLimitError') {
+                userMessage = 'Too many requests. Please wait a moment and try again.';
+            } else if (errorCode === 'DatabaseError') {
+                userMessage = 'Database temporarily unavailable. Please try again later.';
             }
 
             showMessage(userMessage, 'error');
             clearStatsDisplay();
-        } finally {
-            isLoadingStats = false;
-        }
-    }
-
-    submitRatingBtn.addEventListener('click', async () => {
-        const score = parseInt(ratingScoreSelect.value);
-        const isSpam = isSpamCheckbox.checked; // Get checkbox values
-        const isMisleading = isMisleadingCheckbox.checked;
-        const isScam = isScamCheckbox.checked;
-
-        if (!currentUrl) {
-            showMessage('Could not determine current URL. Please try again.', 'error');
-            return;
-        }
-        if (isNaN(score) || score < 1 || score > 5) {
-            showMessage('Please select a valid rating score (1-5).', 'error');
             return;
         }
 
-        // Set loading state for submit button
-        buttonStateManager.setState(submitRatingBtn, 'loading', {
-            loadingText: 'Submitting...'
+        const data = await response.json();
+        // Successful response: ${requestId}
+
+        // Cache the response
+        const cacheData = {
+            data: data,
+            timestamp: Date.now()
+        };
+        statsCache.set(url, cacheData);
+        saveCacheToStorage(url, cacheData);
+
+        updateStatsDisplay(data);
+        // Only show success for force refresh, not regular loads
+        if (forceRefresh) {
+            showMessage('Trust score refreshed!', 'success');
+        }
+
+        isLoadingStats = false;
+    } catch (error) {
+        console.error('Error fetching URL stats:', {
+            error: error.message,
+            stack: error.stack,
+            url: url,
+            timestamp: new Date().toISOString()
         });
 
-        // Button state shows loading - no notification needed
+        // Handle different types of network and runtime errors
+        let userMessage = 'Failed to fetch trust score';
 
+        if (error.name === 'AbortError') {
+            userMessage = 'Request timed out. Please try again.';
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            userMessage = 'Network connection error. Please check your internet connection.';
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+            userMessage = 'Authentication error. Please try logging in again.';
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+            userMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+            userMessage = 'Server error. Please try again later.';
+        } else if (error.message.includes('timeout')) {
+            userMessage = 'Request timed out. Please try again.';
+        } else {
+            userMessage = `Network error: ${error.message}`;
+        }
+
+        showMessage(userMessage, 'error');
+        clearStatsDisplay();
+    } finally {
+        isLoadingStats = false;
+    }
+}
+
+submitRatingBtn.addEventListener('click', async () => {
+    const score = parseInt(ratingScoreSelect.value);
+    const isSpam = isSpamCheckbox.checked; // Get checkbox values
+    const isMisleading = isMisleadingCheckbox.checked;
+    const isScam = isScamCheckbox.checked;
+
+    if (!currentUrl) {
+        showMessage('Could not determine current URL. Please try again.', 'error');
+        return;
+    }
+    if (isNaN(score) || score < 1 || score > 5) {
+        showMessage('Please select a valid rating score (1-5).', 'error');
+        return;
+    }
+
+    // Set loading state for submit button
+    buttonStateManager.setState(submitRatingBtn, 'loading', {
+        loadingText: 'Submitting...'
+    });
+
+    // Button state shows loading - no notification needed
+
+    try {
+        let session = null;
         try {
-            let session = null;
-            try {
-                const result = await getSession();
-                session = result.session;
-            } catch (error) {
-                console.log('Session check completed for rating submission');
-                session = null;
-            }
+            const result = await getSession();
+            session = result.session;
+        } catch (error) {
+            // Session check completed for rating submission
+            session = null;
+        }
 
-            if (!session || !session.access_token) {
-                showMessage('You must be logged in to submit a rating.', 'error');
-                return;
-            }
+        if (!session || !session.access_token) {
+            showMessage('You must be logged in to submit a rating.', 'error');
+            return;
+        }
 
-            const requestId = generateRequestId();
+        const requestId = generateRequestId();
 
-            console.log('Submitting rating:', {
-                requestId,
+        // Submitting rating
+
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+        const response = await fetch(`${API_BASE_URL}/rating`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'apikey': CONFIG.SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${session.access_token}`,
+                'X-Request-ID': requestId
+            },
+            body: JSON.stringify({
                 url: currentUrl,
                 score: score,
-                reports: { isSpam, isMisleading, isScam }
+                comment: null,
+                isSpam: isSpam,
+                isMisleading: isMisleading,
+                isScam: isScam
+            }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({
+                error: 'Network error',
+                code: 'NetworkError',
+                timestamp: new Date().toISOString()
+            }));
+
+            // Handle standardized error responses from unified API
+            const errorMsg = errorData.error || `HTTP ${response.status}`;
+            const errorCode = errorData.code || 'UnknownError';
+
+            console.error('Rating Submission Error:', {
+                status: response.status,
+                error: errorMsg,
+                code: errorCode,
+                timestamp: errorData.timestamp,
+                url: currentUrl,
+                requestId
             });
 
-            // Add timeout to prevent hanging requests
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            // Handle 406 errors specifically for rating submission
+            if (response.status === 406) {
+                console.warn('406 Not Acceptable during rating submission - may still succeed');
+                // 406 errors are handled silently - user doesn't need to know
+                // Don't return error, let it continue to try to get response
+                // The rating might still have been processed successfully
+            } else {
+                // Provide user-friendly error messages based on error codes
+                let userMessage = `❌ Rating failed: ${errorMsg}`;
+                if (errorCode === 'ValidationError') {
+                    userMessage = '⚠️ Invalid rating data. Please check your inputs and try again.';
+                } else if (errorCode === 'AuthError') {
+                    userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
+                } else if (errorCode === 'RateLimitError') {
+                    userMessage = '⏱️ Too many rating submissions. Please wait before submitting another.';
+                } else if (errorCode === 'DatabaseError') {
+                    userMessage = '🔧 Database temporarily unavailable. Please try submitting again.';
+                } else if (response.status === 409) {
+                    userMessage = '⏰ You have already rated this URL recently. Please wait 24 hours before rating again.';
+                }
 
-            const response = await fetch(`${API_BASE_URL}/rating`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'apikey': CONFIG.SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'X-Request-ID': requestId
-                },
-                body: JSON.stringify({
-                    url: currentUrl,
-                    score: score,
-                    comment: null,
-                    isSpam: isSpam,
-                    isMisleading: isMisleading,
-                    isScam: isScam
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({
-                    error: 'Network error',
-                    code: 'NetworkError',
-                    timestamp: new Date().toISOString()
-                }));
-
-                // Handle standardized error responses from unified API
-                const errorMsg = errorData.error || `HTTP ${response.status}`;
-                const errorCode = errorData.code || 'UnknownError';
-
-                console.error('Rating Submission Error:', {
-                    status: response.status,
-                    error: errorMsg,
-                    code: errorCode,
-                    timestamp: errorData.timestamp,
-                    url: currentUrl,
-                    requestId
+                showMessage(userMessage, 'error');
+                buttonStateManager.setState(submitRatingBtn, 'error', {
+                    errorText: 'Submission failed',
+                    duration: 3000
                 });
+                return;
+            }
+        }
 
-                // Handle 406 errors specifically for rating submission
-                if (response.status === 406) {
-                    console.warn('406 Not Acceptable during rating submission - may still succeed');
-                    // 406 errors are handled silently - user doesn't need to know
-                    // Don't return error, let it continue to try to get response
-                    // The rating might still have been processed successfully
+        const data = await response.json();
+
+        // Rating submission successful
+
+        // Add success animation to the rating form
+        const ratingForm = document.querySelector('.rating-form');
+        if (ratingForm) {
+            ratingForm.classList.add('success-animation');
+            setTimeout(() => {
+                ratingForm.classList.remove('success-animation');
+            }, 600);
+        }
+
+        // Show prominent success message
+        const successMessage = data.message || 'Rating submitted successfully!';
+        showMessage(`✅ ${successMessage}`, 'success');
+
+        // Update displayed stats with the latest from API response
+        if (data.urlStats) {
+            updateStatsDisplay(data.urlStats);
+
+            // Domain analysis happens in background - no need to notify user
+
+            // Keep the locally calculated score that was already updated
+            // Don't overwrite with server data - use the local calculation instead
+            // Rating submitted successfully, keeping local score calculation
+        }
+
+        // Set success state for submit button
+        buttonStateManager.setState(submitRatingBtn, 'success', {
+            successText: 'Submitted!',
+            duration: 2000
+        });
+
+        // Notify compact rating manager of successful submission
+        compactRatingManager.onRatingSubmitted();
+
+        // Reset form fields after successful submission
+        setTimeout(() => {
+            ratingScoreSelect.value = '1';
+            isSpamCheckbox.checked = false;
+            isMisleadingCheckbox.checked = false;
+            isScamCheckbox.checked = false;
+        }, 2000);
+    } catch (error) {
+        console.error('Error submitting rating:', {
+            error: error.message || error.toString(),
+            errorType: error.name || 'Unknown',
+            stack: error.stack,
+            url: currentUrl,
+            timestamp: new Date().toISOString()
+        });
+
+        // Handle different types of network and runtime errors
+        let userMessage = '❌ Failed to submit rating';
+
+        if (error.name === 'AbortError') {
+            userMessage = '⏱️ Request timed out. Please try submitting again.';
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            userMessage = '🌐 Network connection error. Please check your internet connection and try again.';
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+            userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+            userMessage = '⏱️ Rate limit exceeded. Please wait before submitting another rating.';
+        } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+            userMessage = '🔧 Server error. Please try submitting your rating again.';
+        } else if (error.message.includes('timeout')) {
+            userMessage = '⏱️ Request timed out. Please try submitting again.';
+        } else {
+            userMessage = `🌐 Network error: ${error.message}`;
+        }
+
+        showMessage(userMessage, 'error');
+
+        // Set error state for submit button
+        buttonStateManager.setState(submitRatingBtn, 'error', {
+            errorText: 'Failed to submit',
+            duration: 3000
+        });
+    }
+});
+
+// --- Initial Setup and Current URL Logic ---
+async function fetchCurrentUrlAndStats() {
+    // fetchCurrentUrlAndStats called
+
+    try {
+        // Ensure Chrome extension APIs are available
+        if (!chrome || !chrome.tabs) {
+            throw new Error('Chrome extension APIs not available');
+        }
+
+        // Use promise-based approach for better error handling
+        const tabs = await new Promise((resolve, reject) => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
                 } else {
-                    // Provide user-friendly error messages based on error codes
-                    let userMessage = `❌ Rating failed: ${errorMsg}`;
-                    if (errorCode === 'ValidationError') {
-                        userMessage = '⚠️ Invalid rating data. Please check your inputs and try again.';
-                    } else if (errorCode === 'AuthError') {
-                        userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
-                    } else if (errorCode === 'RateLimitError') {
-                        userMessage = '⏱️ Too many rating submissions. Please wait before submitting another.';
-                    } else if (errorCode === 'DatabaseError') {
-                        userMessage = '🔧 Database temporarily unavailable. Please try submitting again.';
-                    } else if (response.status === 409) {
-                        userMessage = '⏰ You have already rated this URL recently. Please wait 24 hours before rating again.';
-                    }
+                    resolve(tabs);
+                }
+            });
+        });
 
-                    showMessage(userMessage, 'error');
-                    buttonStateManager.setState(submitRatingBtn, 'error', {
-                        errorText: 'Submission failed',
-                        duration: 3000
-                    });
-                    return;
+        if (tabs && tabs[0] && tabs[0].url) {
+            currentUrl = tabs[0].url;
+            // Current URL retrieved
+
+            if (currentUrlSpan) {
+                currentUrlSpan.textContent = currentUrl;
+            }
+
+            // Validate URL before making API call
+            const isValidUrl = currentUrl && (currentUrl.startsWith('http://') || currentUrl.startsWith('https://'));
+
+            if (!isLoadingStats && isValidUrl) {
+                // Scheduling stats fetch
+                // Add small delay to ensure UI and API are ready
+                setTimeout(() => {
+                    if (!isLoadingStats) { // Double-check before making the call
+                        fetchUrlStats(currentUrl, false); // Normal load, not force refresh
+                    }
+                }, 200);
+            } else {
+                // Skipping stats fetch
+
+                // Show appropriate message for invalid URLs
+                if (!isValidUrl && currentUrl) {
+                    if (currentUrl.startsWith('chrome://') || currentUrl.startsWith('chrome-extension://') || currentUrl.startsWith('moz-extension://')) {
+                        showMessage('Trust scores not available for browser pages.', 'info');
+                    } else if (currentUrl.startsWith('file://')) {
+                        showMessage('Trust scores not available for local files.', 'info');
+                    } else {
+                        showMessage('Trust scores only available for web pages (http/https).', 'info');
+                    }
                 }
             }
-
-            const data = await response.json();
-
-            console.log('Rating submission successful:', {
-                requestId,
-                status: response.status,
-                message: data.message,
-                processing: data.processing
-            });
-
-            // Add success animation to the rating form
-            const ratingForm = document.querySelector('.rating-form');
-            if (ratingForm) {
-                ratingForm.classList.add('success-animation');
-                setTimeout(() => {
-                    ratingForm.classList.remove('success-animation');
-                }, 600);
+        } else {
+            console.warn('No valid tab URL found:', tabs);
+            if (currentUrlSpan) {
+                currentUrlSpan.textContent = 'Could not get URL.';
             }
+            showMessage('Could not retrieve current tab URL.', 'error');
+        }
+    } catch (error) {
+        console.error('Error getting current tab:', error);
+        if (currentUrlSpan) {
+            currentUrlSpan.textContent = 'Error getting URL.';
+        }
+        showMessage('Error retrieving current tab URL.', 'error');
+    }
+}
 
-            // Show prominent success message
-            const successMessage = data.message || 'Rating submitted successfully!';
-            showMessage(`✅ ${successMessage}`, 'success');
+// --- Affiliate Links ---
+// Affiliate links are now managed by the AffiliateManager class
+// The manager handles click tracking, enhanced styling, and future program approval
 
-            // Update displayed stats with the latest from API response
-            if (data.urlStats) {
-                updateStatsDisplay(data.urlStats);
 
-                // Domain analysis happens in background - no need to notify user
 
-                // Keep the locally calculated score that was already updated
-                // Don't overwrite with server data - use the local calculation instead
-                console.log('Rating submitted successfully, keeping local score calculation');
-            }
+let isInitialized = false;
+let isLoadingStats = false;
 
-            // Set success state for submit button
-            buttonStateManager.setState(submitRatingBtn, 'success', {
-                successText: 'Submitted!',
-                duration: 2000
-            });
+// --- Initialize when popup opens ---
+document.addEventListener('DOMContentLoaded', async () => {
+    if (isInitialized) return;
+    isInitialized = true;
 
-            // Notify compact rating manager of successful submission
-            compactRatingManager.onRatingSubmitted();
+    // Extension popup initializing...
 
-            // Reset form fields after successful submission
-            setTimeout(() => {
-                ratingScoreSelect.value = '1';
-                isSpamCheckbox.checked = false;
-                isMisleadingCheckbox.checked = false;
-                isScamCheckbox.checked = false;
-            }, 2000);
+    try {
+        // Ensure DOM elements are available
+        if (!currentUrlSpan || !trustScoreSpan) {
+            console.error('Required DOM elements not found');
+            return;
+        }
+
+        // Initialize UI components first (no async operations)
+        initCloseButton();
+        initMessageBar();
+        initHeaderAuth();
+        // Affiliate links are automatically initialized by AffiliateManager
+        loadCacheFromStorage();
+        initButtonStateManagement();
+        initNotificationManager();
+        initTrustScoreTooltip();
+
+        // Clear any stale notifications from previous sessions
+        if (notificationManager) {
+            notificationManager.clearAll();
+        }
+
+        // UI components initialized
+
+        // Initialize Supabase client (this might take time)
+        await initSupabase();
+        // Supabase client initialized
+
+        // Add delay before auth operations to prevent timing issues
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        // Get session with improved error handling
+        let session = null;
+        try {
+            const result = await getSession();
+            session = result.session;
+            // Session retrieved
         } catch (error) {
-            console.error('Error submitting rating:', {
-                error: error.message || error.toString(),
-                errorType: error.name || 'Unknown',
-                stack: error.stack,
-                url: currentUrl,
-                timestamp: new Date().toISOString()
-            });
+            // Session check completed (no active session)
+            session = null;
+        }
 
-            // Handle different types of network and runtime errors
-            let userMessage = '❌ Failed to submit rating';
+        // Update UI based on auth state
+        updateUI(session);
 
-            if (error.name === 'AbortError') {
-                userMessage = '⏱️ Request timed out. Please try submitting again.';
-            } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                userMessage = '🌐 Network connection error. Please check your internet connection and try again.';
-            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                userMessage = '🔐 Authentication expired. Please log in again to submit ratings.';
-            } else if (error.message.includes('429') || error.message.includes('rate limit')) {
-                userMessage = '⏱️ Rate limit exceeded. Please wait before submitting another rating.';
-            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
-                userMessage = '🔧 Server error. Please try submitting your rating again.';
-            } else if (error.message.includes('timeout')) {
-                userMessage = '⏱️ Request timed out. Please try submitting again.';
-            } else {
-                userMessage = `🌐 Network error: ${error.message}`;
+        // Add longer delay to ensure auth state is settled before fetching data
+        setTimeout(() => {
+            // Fetching current URL and stats...
+            fetchCurrentUrlAndStats();
+        }, 300);
+
+        // Clean up old cache entries periodically
+        cleanupOldCacheEntries();
+
+        // Extension initialization complete
+    } catch (error) {
+        console.error('Extension initialization failed:', error);
+        // Still try to fetch URL stats even if initialization partially failed
+        setTimeout(() => {
+            fetchCurrentUrlAndStats();
+        }, 800);
+    }
+});
+
+// Listen for auth state changes (e.g., from other tabs or if session expires)
+initSupabase().then(client => {
+    client.auth.onAuthStateChange((event, session) => {
+        // Auth state changed
+        updateUI(session);
+        // Only re-fetch if this is a login event and we have a current URL and we're fully initialized
+        // Add delay to prevent race conditions with initialization
+        if (event === 'SIGNED_IN' && currentUrl && isInitialized && !isLoadingStats) {
+            // Refreshing stats after login
+            setTimeout(() => {
+                if (!isLoadingStats) { // Double-check to prevent duplicate requests
+                    fetchUrlStats(currentUrl, true); // Force refresh on login
+                }
+            }, 200);
+        }
+    });
+}).catch(error => {
+    console.error('Failed to initialize auth state listener:', error);
+});
+// --- Close Button Handler ---
+function initCloseButton() {
+    const closeBtn = document.getElementById('close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            window.close();
+        });
+    }
+}
+
+// --- Message Bar Handler ---
+function initMessageBar() {
+    const messageClose = document.getElementById('message-close');
+    if (messageClose) {
+        messageClose.addEventListener('click', () => {
+            hideMessage();
+        });
+    }
+
+    // Add keyboard support for closing messages (Escape key)
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            const messageBar = document.getElementById('message-bar');
+            if (messageBar && messageBar.classList.contains('show')) {
+                hideMessage();
             }
+        }
+    });
+}
 
-            showMessage(userMessage, 'error');
+// --- Trust Score Tooltip Initialization ---
+function initTrustScoreTooltip() {
+    // Initializing trust score tooltip system...
 
-            // Set error state for submit button
-            buttonStateManager.setState(submitRatingBtn, 'error', {
-                errorText: 'Failed to submit',
-                duration: 3000
-            });
+    // The tooltip system auto-initializes, but we can add custom configuration here
+    if (trustScoreTooltip) {
+        // Trust score tooltip system initialized successfully
+    } else {
+        // Failed to initialize trust score tooltip system
+    }
+}
+
+// --- Notification Manager Initialization ---
+function initNotificationManager() {
+    // Initializing enhanced notification manager...
+
+    // The notification manager auto-initializes, but we can add custom configuration here
+    if (notificationManager) {
+        // Enhanced notification manager initialized successfully
+
+        // Show a welcome notification for testing (remove in production)
+        // notificationManager.show('Enhanced notifications ready!', 'info', { duration: 2000 });
+    } else {
+        console.warn('Failed to initialize notification manager');
+    }
+}
+
+// --- Button State Management Initialization ---
+function initButtonStateManagement() {
+    // Initializing button state management...
+
+    // Initialize all buttons with state management
+    const buttonsToManage = [
+        // Main auth buttons
+        { selector: '#login-btn', options: {} },
+        { selector: '#signup-btn', options: {} },
+        { selector: '#forgot-password-btn', options: {} },
+        { selector: '#resend-btn', options: {} },
+
+        // Header auth buttons
+        { selector: '#header-login-btn', options: {} },
+        { selector: '#header-signup-btn', options: {} },
+        { selector: '#header-forgot-password-btn', options: {} },
+
+        // Action buttons
+        { selector: '#submit-rating-btn', options: {} },
+
+        // Logout button
+        { selector: '#logout-btn', options: {} }
+    ];
+
+    buttonsToManage.forEach(({ selector, options }) => {
+        const button = document.querySelector(selector);
+        if (button) {
+            buttonStateManager.initializeButton(button, options);
+            // Initialized button state management
+        } else {
+            // Button not found for state management
         }
     });
 
-    // --- Initial Setup and Current URL Logic ---
-    async function fetchCurrentUrlAndStats() {
-        console.log('fetchCurrentUrlAndStats called');
+    // Button state management initialization complete
+}
 
-        try {
-            // Ensure Chrome extension APIs are available
-            if (!chrome || !chrome.tabs) {
-                throw new Error('Chrome extension APIs not available');
-            }
+// --- Header Login/Signup Handlers ---
+function initHeaderAuth() {
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    const headerSignupBtn = document.getElementById('header-signup-btn');
+    const headerForgotBtn = document.getElementById('header-forgot-password-btn');
+    const headerEmail = document.getElementById('header-email');
+    const headerPassword = document.getElementById('header-password');
 
-            // Use promise-based approach for better error handling
-            const tabs = await new Promise((resolve, reject) => {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else {
-                        resolve(tabs);
-                    }
-                });
-            });
+    // Header Login
+    if (headerLoginBtn && headerEmail && headerPassword) {
+        headerLoginBtn.addEventListener('click', async () => {
+            const email = headerEmail.value.trim();
+            const password = headerPassword.value.trim();
 
-            if (tabs && tabs[0] && tabs[0].url) {
-                currentUrl = tabs[0].url;
-                console.log('Current URL retrieved:', currentUrl);
-
-                if (currentUrlSpan) {
-                    currentUrlSpan.textContent = currentUrl;
-                }
-
-                // Validate URL before making API call
-                const isValidUrl = currentUrl && (currentUrl.startsWith('http://') || currentUrl.startsWith('https://'));
-
-                if (!isLoadingStats && isValidUrl) {
-                    console.log('Scheduling stats fetch for:', currentUrl);
-                    // Add small delay to ensure UI and API are ready
-                    setTimeout(() => {
-                        if (!isLoadingStats) { // Double-check before making the call
-                            fetchUrlStats(currentUrl, false); // Normal load, not force refresh
-                        }
-                    }, 200);
-                } else {
-                    console.log('Skipping stats fetch:', {
-                        isLoadingStats,
-                        validUrl: isValidUrl,
-                        url: currentUrl,
-                        reason: !isValidUrl ? 'Invalid URL (not http/https)' : 'Already loading'
-                    });
-
-                    // Show appropriate message for invalid URLs
-                    if (!isValidUrl && currentUrl) {
-                        if (currentUrl.startsWith('chrome://') || currentUrl.startsWith('chrome-extension://') || currentUrl.startsWith('moz-extension://')) {
-                            showMessage('Trust scores not available for browser pages.', 'info');
-                        } else if (currentUrl.startsWith('file://')) {
-                            showMessage('Trust scores not available for local files.', 'info');
-                        } else {
-                            showMessage('Trust scores only available for web pages (http/https).', 'info');
-                        }
-                    }
-                }
-            } else {
-                console.warn('No valid tab URL found:', tabs);
-                if (currentUrlSpan) {
-                    currentUrlSpan.textContent = 'Could not get URL.';
-                }
-                showMessage('Could not retrieve current tab URL.', 'error');
-            }
-        } catch (error) {
-            console.error('Error getting current tab:', error);
-            if (currentUrlSpan) {
-                currentUrlSpan.textContent = 'Error getting URL.';
-            }
-            showMessage('Error retrieving current tab URL.', 'error');
-        }
-    }
-
-    // --- Affiliate Links ---
-    // Affiliate links are now managed by the AffiliateManager class
-    // The manager handles click tracking, enhanced styling, and future program approval
-
-
-
-    let isInitialized = false;
-    let isLoadingStats = false;
-
-    // --- Initialize when popup opens ---
-    document.addEventListener('DOMContentLoaded', async () => {
-        if (isInitialized) return;
-        isInitialized = true;
-
-        console.log('Extension popup initializing...');
-
-        try {
-            // Ensure DOM elements are available
-            if (!currentUrlSpan || !trustScoreSpan) {
-                console.error('Required DOM elements not found');
+            if (!email || !password) {
+                showMessage('Email and password are required.', 'error');
                 return;
             }
 
-            // Initialize UI components first (no async operations)
-            initCloseButton();
-            initMessageBar();
-            initHeaderAuth();
-            // Affiliate links are automatically initialized by AffiliateManager
-            loadCacheFromStorage();
-            initButtonStateManagement();
-            initNotificationManager();
-            initTrustScoreTooltip();
+            buttonStateManager.setState(headerLoginBtn, 'loading', {
+                loadingText: 'Logging in...'
+            });
 
-            // Clear any stale notifications from previous sessions
-            if (notificationManager) {
-                notificationManager.clearAll();
-            }
-
-            console.log('UI components initialized');
-
-            // Initialize Supabase client (this might take time)
-            await initSupabase();
-            console.log('Supabase client initialized');
-
-            // Add delay before auth operations to prevent timing issues
-            await new Promise(resolve => setTimeout(resolve, 150));
-
-            // Get session with improved error handling
-            let session = null;
             try {
-                const result = await getSession();
-                session = result.session;
-                console.log('Session retrieved:', session ? 'authenticated' : 'anonymous');
-            } catch (error) {
-                console.log('Session check completed (no active session)');
-                session = null;
-            }
-
-            // Update UI based on auth state
-            updateUI(session);
-
-            // Add longer delay to ensure auth state is settled before fetching data
-            setTimeout(() => {
-                console.log('Fetching current URL and stats...');
-                fetchCurrentUrlAndStats();
-            }, 300);
-
-            // Clean up old cache entries periodically
-            cleanupOldCacheEntries();
-
-            console.log('Extension initialization complete');
-        } catch (error) {
-            console.error('Extension initialization failed:', error);
-            // Still try to fetch URL stats even if initialization partially failed
-            setTimeout(() => {
-                fetchCurrentUrlAndStats();
-            }, 800);
-        }
-    });
-
-    // Listen for auth state changes (e.g., from other tabs or if session expires)
-    initSupabase().then(client => {
-        client.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state changed:', event, session ? 'authenticated' : 'anonymous');
-            updateUI(session);
-            // Only re-fetch if this is a login event and we have a current URL and we're fully initialized
-            // Add delay to prevent race conditions with initialization
-            if (event === 'SIGNED_IN' && currentUrl && isInitialized && !isLoadingStats) {
-                console.log('Refreshing stats after login');
-                setTimeout(() => {
-                    if (!isLoadingStats) { // Double-check to prevent duplicate requests
-                        fetchUrlStats(currentUrl, true); // Force refresh on login
-                    }
-                }, 200);
-            }
-        });
-    }).catch(error => {
-        console.error('Failed to initialize auth state listener:', error);
-    });
-    // --- Close Button Handler ---
-    function initCloseButton() {
-        const closeBtn = document.getElementById('close-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                window.close();
-            });
-        }
-    }
-
-    // --- Message Bar Handler ---
-    function initMessageBar() {
-        const messageClose = document.getElementById('message-close');
-        if (messageClose) {
-            messageClose.addEventListener('click', () => {
-                hideMessage();
-            });
-        }
-
-        // Add keyboard support for closing messages (Escape key)
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                const messageBar = document.getElementById('message-bar');
-                if (messageBar && messageBar.classList.contains('show')) {
-                    hideMessage();
-                }
-            }
-        });
-    }
-
-    // --- Trust Score Tooltip Initialization ---
-    function initTrustScoreTooltip() {
-        console.log('Initializing trust score tooltip system...');
-
-        // The tooltip system auto-initializes, but we can add custom configuration here
-        if (trustScoreTooltip) {
-            console.log('Trust score tooltip system initialized successfully');
-        } else {
-            console.warn('Failed to initialize trust score tooltip system');
-        }
-    }
-
-    // --- Notification Manager Initialization ---
-    function initNotificationManager() {
-        console.log('Initializing enhanced notification manager...');
-
-        // The notification manager auto-initializes, but we can add custom configuration here
-        if (notificationManager) {
-            console.log('Enhanced notification manager initialized successfully');
-
-            // Show a welcome notification for testing (remove in production)
-            // notificationManager.show('Enhanced notifications ready!', 'info', { duration: 2000 });
-        } else {
-            console.warn('Failed to initialize notification manager');
-        }
-    }
-
-    // --- Button State Management Initialization ---
-    function initButtonStateManagement() {
-        console.log('Initializing button state management...');
-
-        // Initialize all buttons with state management
-        const buttonsToManage = [
-            // Main auth buttons
-            { selector: '#login-btn', options: {} },
-            { selector: '#signup-btn', options: {} },
-            { selector: '#forgot-password-btn', options: {} },
-            { selector: '#resend-btn', options: {} },
-
-            // Header auth buttons
-            { selector: '#header-login-btn', options: {} },
-            { selector: '#header-signup-btn', options: {} },
-            { selector: '#header-forgot-password-btn', options: {} },
-
-            // Action buttons
-            { selector: '#submit-rating-btn', options: {} },
-
-            // Logout button
-            { selector: '#logout-btn', options: {} }
-        ];
-
-        buttonsToManage.forEach(({ selector, options }) => {
-            const button = document.querySelector(selector);
-            if (button) {
-                buttonStateManager.initializeButton(button, options);
-                console.log(`Initialized button state management for: ${selector}`);
-            } else {
-                console.warn(`Button not found for state management: ${selector}`);
-            }
-        });
-
-        console.log('Button state management initialization complete');
-    }
-
-    // --- Header Login/Signup Handlers ---
-    function initHeaderAuth() {
-        const headerLoginBtn = document.getElementById('header-login-btn');
-        const headerSignupBtn = document.getElementById('header-signup-btn');
-        const headerForgotBtn = document.getElementById('header-forgot-password-btn');
-        const headerEmail = document.getElementById('header-email');
-        const headerPassword = document.getElementById('header-password');
-
-        // Header Login
-        if (headerLoginBtn && headerEmail && headerPassword) {
-            headerLoginBtn.addEventListener('click', async () => {
-                const email = headerEmail.value.trim();
-                const password = headerPassword.value.trim();
-
-                if (!email || !password) {
-                    showMessage('Email and password are required.', 'error');
-                    return;
-                }
-
-                buttonStateManager.setState(headerLoginBtn, 'loading', {
-                    loadingText: 'Logging in...'
-                });
-
-                try {
-                    const { user, session, error } = await signIn(email, password);
-                    if (error) {
-                        if (error.message.includes('Email not confirmed')) {
-                            showMessage('Please check your email and click the confirmation link before logging in.', 'error');
-                            buttonStateManager.setState(headerLoginBtn, 'error', {
-                                errorText: 'Email not confirmed',
-                                duration: 3000
-                            });
-                        } else {
-                            showMessage(`Login failed: ${error.message}`, 'error');
-                            buttonStateManager.setState(headerLoginBtn, 'error', {
-                                errorText: 'Login failed',
-                                duration: 3000
-                            });
-                        }
+                const { user, session, error } = await signIn(email, password);
+                if (error) {
+                    if (error.message.includes('Email not confirmed')) {
+                        showMessage('Please check your email and click the confirmation link before logging in.', 'error');
+                        buttonStateManager.setState(headerLoginBtn, 'error', {
+                            errorText: 'Email not confirmed',
+                            duration: 3000
+                        });
                     } else {
-                        showMessage('Login successful!', 'success');
-                        buttonStateManager.setState(headerLoginBtn, 'success', {
-                            successText: 'Success!',
+                        showMessage(`Login failed: ${error.message}`, 'error');
+                        buttonStateManager.setState(headerLoginBtn, 'error', {
+                            errorText: 'Login failed',
+                            duration: 3000
+                        });
+                    }
+                } else {
+                    showMessage('Login successful!', 'success');
+                    buttonStateManager.setState(headerLoginBtn, 'success', {
+                        successText: 'Success!',
+                        duration: 2000
+                    });
+                    updateUI(session);
+                    // Clear form
+                    headerEmail.value = '';
+                    headerPassword.value = '';
+                }
+            } catch (error) {
+                showMessage(`Login error: ${error.message}`, 'error');
+                buttonStateManager.setState(headerLoginBtn, 'error', {
+                    errorText: 'Network error',
+                    duration: 3000
+                });
+            }
+        });
+    }
+
+    // Header Signup
+    if (headerSignupBtn && headerEmail && headerPassword) {
+        headerSignupBtn.addEventListener('click', async () => {
+            const email = headerEmail.value.trim();
+            const password = headerPassword.value.trim();
+
+            if (!email || !password) {
+                showMessage('Email and password are required.', 'error');
+                return;
+            }
+
+            buttonStateManager.setState(headerSignupBtn, 'loading', {
+                loadingText: 'Signing up...'
+            });
+
+            try {
+                const { user, session, error } = await signUp(email, password);
+                if (error) {
+                    showMessage(`Sign up failed: ${error.message}`, 'error');
+                    buttonStateManager.setState(headerSignupBtn, 'error', {
+                        errorText: 'Sign up failed',
+                        duration: 3000
+                    });
+                } else {
+                    if (session) {
+                        showMessage('Account created and logged in successfully!', 'success');
+                        buttonStateManager.setState(headerSignupBtn, 'success', {
+                            successText: 'Account created!',
                             duration: 2000
                         });
                         updateUI(session);
-                        // Clear form
-                        headerEmail.value = '';
-                        headerPassword.value = '';
-                    }
-                } catch (error) {
-                    showMessage(`Login error: ${error.message}`, 'error');
-                    buttonStateManager.setState(headerLoginBtn, 'error', {
-                        errorText: 'Network error',
-                        duration: 3000
-                    });
-                }
-            });
-        }
-
-        // Header Signup
-        if (headerSignupBtn && headerEmail && headerPassword) {
-            headerSignupBtn.addEventListener('click', async () => {
-                const email = headerEmail.value.trim();
-                const password = headerPassword.value.trim();
-
-                if (!email || !password) {
-                    showMessage('Email and password are required.', 'error');
-                    return;
-                }
-
-                buttonStateManager.setState(headerSignupBtn, 'loading', {
-                    loadingText: 'Signing up...'
-                });
-
-                try {
-                    const { user, session, error } = await signUp(email, password);
-                    if (error) {
-                        showMessage(`Sign up failed: ${error.message}`, 'error');
-                        buttonStateManager.setState(headerSignupBtn, 'error', {
-                            errorText: 'Sign up failed',
-                            duration: 3000
-                        });
                     } else {
-                        if (session) {
-                            showMessage('Account created and logged in successfully!', 'success');
-                            buttonStateManager.setState(headerSignupBtn, 'success', {
-                                successText: 'Account created!',
-                                duration: 2000
-                            });
-                            updateUI(session);
-                        } else {
-                            showMessage('Account created! Please check your email for confirmation.', 'success');
-                            buttonStateManager.setState(headerSignupBtn, 'success', {
-                                successText: 'Check email',
-                                duration: 3000
-                            });
-                        }
-                        // Clear form
-                        headerEmail.value = '';
-                        headerPassword.value = '';
-                    }
-                } catch (error) {
-                    showMessage(`Sign up error: ${error.message}`, 'error');
-                    buttonStateManager.setState(headerSignupBtn, 'error', {
-                        errorText: 'Network error',
-                        duration: 3000
-                    });
-                }
-            });
-        }
-
-        // Header Forgot Password
-        if (headerForgotBtn && headerEmail) {
-            headerForgotBtn.addEventListener('click', async () => {
-                const email = headerEmail.value.trim();
-                if (!email) {
-                    showMessage('Please enter your email address first.', 'error');
-                    return;
-                }
-
-                buttonStateManager.setState(headerForgotBtn, 'loading', {
-                    loadingText: 'Sending...'
-                });
-
-                try {
-                    const { error } = await resetPassword(email);
-                    if (error) {
-                        showMessage(`Failed to send reset email: ${error.message}`, 'error');
-                        buttonStateManager.setState(headerForgotBtn, 'error', {
-                            errorText: 'Failed to send',
-                            duration: 3000
-                        });
-                    } else {
-                        showMessage('Password reset email sent! Check your inbox.', 'success');
-                        buttonStateManager.setState(headerForgotBtn, 'success', {
-                            successText: 'Email sent!',
+                        showMessage('Account created! Please check your email for confirmation.', 'success');
+                        buttonStateManager.setState(headerSignupBtn, 'success', {
+                            successText: 'Check email',
                             duration: 3000
                         });
                     }
-                } catch (error) {
-                    showMessage(`Error: ${error.message}`, 'error');
-                    buttonStateManager.setState(headerForgotBtn, 'error', {
-                        errorText: 'Network error',
-                        duration: 3000
-                    });
+                    // Clear form
+                    headerEmail.value = '';
+                    headerPassword.value = '';
                 }
-            });
-        }
-
-        // Add Enter key support for header login
-        if (headerEmail && headerPassword && headerLoginBtn) {
-            const handleEnterKey = (event) => {
-                if (event.key === 'Enter') {
-                    headerLoginBtn.click();
-                }
-            };
-
-            headerEmail.addEventListener('keypress', handleEnterKey);
-            headerPassword.addEventListener('keypress', handleEnterKey);
-        }
-    }
-
-    // Clean Logout Button
-    logoutBtn.addEventListener('click', async () => {
-        buttonStateManager.setState(logoutBtn, 'loading', {
-            loadingText: 'Logging out...'
-        });
-        // Button state shows loading - no notification needed
-
-        try {
-            const { error } = await signOut();
-            if (error) {
-                showMessage(`Logout failed: ${error.message}`, 'error');
-                buttonStateManager.setState(logoutBtn, 'error', {
-                    errorText: 'Logout failed',
+            } catch (error) {
+                showMessage(`Sign up error: ${error.message}`, 'error');
+                buttonStateManager.setState(headerSignupBtn, 'error', {
+                    errorText: 'Network error',
                     duration: 3000
                 });
-                console.error('Logout error:', error);
-            } else {
-                buttonStateManager.setState(logoutBtn, 'success', {
-                    successText: 'Logged out!',
-                    duration: 1500
-                });
-                updateUI(null);
-                // Clear rating form
-                ratingScoreSelect.value = '1';
-                isSpamCheckbox.checked = false;
-                isMisleadingCheckbox.checked = false;
-                isScamCheckbox.checked = false;
-                // Clear email/password fields
-                emailInput.value = '';
-                passwordInput.value = '';
-                // Button state shows success - no notification needed
             }
-        } catch (error) {
+        });
+    }
+
+    // Header Forgot Password
+    if (headerForgotBtn && headerEmail) {
+        headerForgotBtn.addEventListener('click', async () => {
+            const email = headerEmail.value.trim();
+            if (!email) {
+                showMessage('Please enter your email address first.', 'error');
+                return;
+            }
+
+            buttonStateManager.setState(headerForgotBtn, 'loading', {
+                loadingText: 'Sending...'
+            });
+
+            try {
+                const { error } = await resetPassword(email);
+                if (error) {
+                    showMessage(`Failed to send reset email: ${error.message}`, 'error');
+                    buttonStateManager.setState(headerForgotBtn, 'error', {
+                        errorText: 'Failed to send',
+                        duration: 3000
+                    });
+                } else {
+                    showMessage('Password reset email sent! Check your inbox.', 'success');
+                    buttonStateManager.setState(headerForgotBtn, 'success', {
+                        successText: 'Email sent!',
+                        duration: 3000
+                    });
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+                buttonStateManager.setState(headerForgotBtn, 'error', {
+                    errorText: 'Network error',
+                    duration: 3000
+                });
+            }
+        });
+    }
+
+    // Add Enter key support for header login
+    if (headerEmail && headerPassword && headerLoginBtn) {
+        const handleEnterKey = (event) => {
+            if (event.key === 'Enter') {
+                headerLoginBtn.click();
+            }
+        };
+
+        headerEmail.addEventListener('keypress', handleEnterKey);
+        headerPassword.addEventListener('keypress', handleEnterKey);
+    }
+}
+
+// Clean Logout Button
+logoutBtn.addEventListener('click', async () => {
+    buttonStateManager.setState(logoutBtn, 'loading', {
+        loadingText: 'Logging out...'
+    });
+    // Button state shows loading - no notification needed
+
+    try {
+        const { error } = await signOut();
+        if (error) {
+            showMessage(`Logout failed: ${error.message}`, 'error');
             buttonStateManager.setState(logoutBtn, 'error', {
-                errorText: 'Network error',
+                errorText: 'Logout failed',
                 duration: 3000
             });
-            showMessage(`Logout error: ${error.message}`, 'error');
+            console.error('Logout error:', error);
+        } else {
+            buttonStateManager.setState(logoutBtn, 'success', {
+                successText: 'Logged out!',
+                duration: 1500
+            });
+            updateUI(null);
+            // Clear rating form
+            ratingScoreSelect.value = '1';
+            isSpamCheckbox.checked = false;
+            isMisleadingCheckbox.checked = false;
+            isScamCheckbox.checked = false;
+            // Clear email/password fields
+            emailInput.value = '';
+            passwordInput.value = '';
+            // Button state shows success - no notification needed
         }
-    });
+    } catch (error) {
+        buttonStateManager.setState(logoutBtn, 'error', {
+            errorText: 'Network error',
+            duration: 3000
+        });
+        showMessage(`Logout error: ${error.message}`, 'error');
+    }
+});

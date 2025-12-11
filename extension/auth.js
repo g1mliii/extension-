@@ -45,7 +45,7 @@ export async function signUp(email, password) {
         email: email,
         password: password,
         options: {
-            emailRedirectTo: `https://g1mliii.github.io/url-rater-confir/confirm.html`
+            emailRedirectTo: `https://foglite.com/confirm.html`
         }
     });
     return { user: data.user, session: data.session, error };
@@ -151,7 +151,7 @@ export async function resendConfirmation(email) {
         type: 'signup',
         email: email,
         options: {
-            emailRedirectTo: `https://g1mliii.github.io/url-rater-confir/confirm.html`
+            emailRedirectTo: `https://foglite.com/confirm.html`
         }
     });
     return { error };
@@ -165,7 +165,7 @@ export async function resendConfirmation(email) {
 export async function resetPassword(email) {
     const client = await initSupabase();
     const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://g1mliii.github.io/url-rater-confir/confirm.html`
+        redirectTo: `https://foglite.com/confirm.html`
     });
     return { error };
 }
