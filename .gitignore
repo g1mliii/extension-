@@ -25,8 +25,23 @@ debug-*.js
 *-debug.js
 test_extension_integration.js
 
-# Temporary documentation
-TASK_*_COMPLETION_SUMMARY.md
+# AI-generated documentation (prevent re-upload)
+TASK_*.md
+*_SUMMARY.md
+*_FIX_SUMMARY.md
+*_FIXES.md
+*_CLEANUP*.md
+*_IMPLEMENTATION*.md
+*_ANALYSIS*.md
+*_IMPACT_ANALYSIS*.md
+*COMMIT_SUMMARY*.md
+docs/*_SUMMARY.md
+docs/*_FIXES.md
+docs/*_FIX_*.md
+docs/*_CLEANUP*.md
+docs/*_IMPLEMENTATION*.md
+docs/*_ANALYSIS*.md
+supabase/migrations/README*.md
 
 # SQL cleanup files
 database_cleanup_and_fixes.sql
