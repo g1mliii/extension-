@@ -31,15 +31,11 @@ TASK_*.md
 *_FIX_SUMMARY.md
 *_FIXES.md
 *_CLEANUP*.md
-*_IMPLEMENTATION*.md
 *_ANALYSIS*.md
 *_IMPACT_ANALYSIS*.md
 *COMMIT_SUMMARY*.md
 docs/*_SUMMARY.md
-docs/*_FIXES.md
-docs/*_FIX_*.md
 docs/*_CLEANUP*.md
-docs/*_IMPLEMENTATION*.md
 docs/*_ANALYSIS*.md
 supabase/migrations/README*.md
 

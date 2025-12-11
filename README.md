@@ -1,6 +1,6 @@
 # URL Rating Extension
 
-A Chrome browser extension for rating URLs and viewing trust statistics.
+A Chrome browser extension for rating URLs
 
 ## Project Structure
 
